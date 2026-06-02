@@ -1,3 +1,10 @@
+## [1.0.4](https://github.com/ElementMint/snapscroll/compare/v1.0.3...v1.0.4) (2026-06-02)
+
+
+### Bug Fixes
+
+* restore CLASSES import in accessibility.js ([3583dd9](https://github.com/ElementMint/snapscroll/commit/3583dd9657fbd35d7c3aa8e4b921148d29e2bd7a))
+
 ## [1.0.3](https://github.com/ElementMint/snapscroll/compare/v1.0.2...v1.0.3) (2026-06-02)
 
 
