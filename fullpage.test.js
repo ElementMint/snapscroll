@@ -5,12 +5,12 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mergeConfig, DEFAULT_CONFIG, parseDataConfig }     from '../js/core/config.js';
-import { createState }                                       from '../js/core/state.js';
-import { createEventBus }                                    from '../js/core/events.js';
-import { normalizeAnchor, buildAnchor, parseAnchor }        from '../js/utils/url.js';
-import { throttle, debounce, prefersReducedMotion, isAEMAuthorMode } from '../js/utils/performance.js';
-import { CLASSES, EVENTS }                                  from '../js/core/constants.js';
+import { mergeConfig, DEFAULT_CONFIG, parseDataConfig }     from './js/core/config.js';
+import { createState }                                       from './js/core/state.js';
+import { createEventBus }                                    from './js/core/events.js';
+import { normalizeAnchor, buildAnchor, parseAnchor }        from './js/utils/url.js';
+import { throttle, debounce, prefersReducedMotion, isAEMAuthorMode } from './js/utils/performance.js';
+import { CLASSES, EVENTS }                                  from './js/core/constants.js';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
