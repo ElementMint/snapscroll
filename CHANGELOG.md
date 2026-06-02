@@ -1,3 +1,16 @@
+# 1.0.0 (2026-06-02)
+
+
+### Bug Fixes
+
+* remove unused imports and disable husky on CI ([c6da305](https://github.com/ElementMint/snapscroll/commit/c6da3056393633eec02ec14e732324f41477474b))
+* resolve test import paths and add jsdom dependency ([cc37a46](https://github.com/ElementMint/snapscroll/commit/cc37a469f86e2fd0b59b8bf7679fab66db611399))
+
+
+### Features
+
+* initial release of snapscroll v1.0.0 ([e7712de](https://github.com/ElementMint/snapscroll/commit/e7712de8a96f62112f5e7716aa4063fd6df80fd5))
+
 # Changelog
 
 All notable changes to FullPage Engine are documented here.
