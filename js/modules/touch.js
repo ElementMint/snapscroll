@@ -6,7 +6,7 @@
  */
 
 import { PASSIVE_OPTS, isTouchDevice } from '../utils/performance.js';
-import { TOUCH, DIRECTION }            from '../core/constants.js';
+import { TOUCH } from '../core/constants.js';
 
 /**
  * @typedef {Object} TouchHandler
@@ -29,8 +29,8 @@ import { TOUCH, DIRECTION }            from '../core/constants.js';
  */
 export function createTouchHandler(el, callbacks, options = {}) {
   const {
-    minDistance    = TOUCH.MIN_SWIPE_DISTANCE,
-    maxTime        = TOUCH.MAX_SWIPE_TIME,
+    minDistance = TOUCH.MIN_SWIPE_DISTANCE,
+    maxTime = TOUCH.MAX_SWIPE_TIME,
     angleThreshold = TOUCH.ANGLE_THRESHOLD,
   } = options;
 
@@ -45,8 +45,8 @@ export function createTouchHandler(el, callbacks, options = {}) {
   function onTouchStart(e) {
     if (e.touches.length > 1) return; // ignore multi-touch
     const t = e.touches[0];
-    startX    = t.clientX;
-    startY    = t.clientY;
+    startX = t.clientX;
+    startY = t.clientY;
     startTime = performance.now();
     isSwiping = true;
   }
@@ -54,8 +54,7 @@ export function createTouchHandler(el, callbacks, options = {}) {
   /**
    * @param {TouchEvent} e
    */
-  function onTouchMove(e) {
-    // Allow natural scroll if not yet determined to be a swipe
+  function onTouchMove(_e) {
     if (!isSwiping) return;
   }
 
@@ -69,11 +68,11 @@ export function createTouchHandler(el, callbacks, options = {}) {
     const elapsed = performance.now() - startTime;
     if (elapsed > maxTime) return;
 
-    const t        = e.changedTouches[0];
-    const deltaX   = t.clientX - startX;
-    const deltaY   = t.clientY - startY;
-    const absX     = Math.abs(deltaX);
-    const absY     = Math.abs(deltaY);
+    const t = e.changedTouches[0];
+    const deltaX = t.clientX - startX;
+    const deltaY = t.clientY - startY;
+    const absX = Math.abs(deltaX);
+    const absY = Math.abs(deltaY);
     const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
     if (distance < minDistance) return;
@@ -108,16 +107,16 @@ export function createTouchHandler(el, callbacks, options = {}) {
   }
 
   el.addEventListener('touchstart', onTouchStart, PASSIVE_OPTS);
-  el.addEventListener('touchmove',  onTouchMove,  PASSIVE_OPTS);
-  el.addEventListener('touchend',   onTouchEnd,   PASSIVE_OPTS);
-  el.addEventListener('touchcancel',onTouchCancel,PASSIVE_OPTS);
+  el.addEventListener('touchmove', onTouchMove, PASSIVE_OPTS);
+  el.addEventListener('touchend', onTouchEnd, PASSIVE_OPTS);
+  el.addEventListener('touchcancel', onTouchCancel, PASSIVE_OPTS);
 
   return {
     destroy() {
       el.removeEventListener('touchstart', onTouchStart, PASSIVE_OPTS);
-      el.removeEventListener('touchmove',  onTouchMove,  PASSIVE_OPTS);
-      el.removeEventListener('touchend',   onTouchEnd,   PASSIVE_OPTS);
-      el.removeEventListener('touchcancel',onTouchCancel,PASSIVE_OPTS);
-    }
+      el.removeEventListener('touchmove', onTouchMove, PASSIVE_OPTS);
+      el.removeEventListener('touchend', onTouchEnd, PASSIVE_OPTS);
+      el.removeEventListener('touchcancel', onTouchCancel, PASSIVE_OPTS);
+    },
   };
 }

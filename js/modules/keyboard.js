@@ -5,7 +5,7 @@
  * Respects focus trapping and natural scroll in overflow sections.
  */
 
-import { KEYS, DIRECTION }  from '../core/constants.js';
+import { KEYS } from '../core/constants.js';
 
 /**
  * @typedef {Object} KeyboardHandler
@@ -34,11 +34,12 @@ export function createKeyboardHandler(callbacks) {
     // Don't intercept when focus is in a form element or editable content
     const target = e.target;
     if (
-      target.tagName === 'INPUT'    ||
+      target.tagName === 'INPUT' ||
       target.tagName === 'TEXTAREA' ||
-      target.tagName === 'SELECT'   ||
+      target.tagName === 'SELECT' ||
       target.isContentEditable
-    ) return;
+    )
+      return;
 
     // Don't intercept when focus is inside an fp-overflow scrollable
     if (target.closest?.('.fp-overflow')) return;
@@ -67,8 +68,14 @@ export function createKeyboardHandler(callbacks) {
   document.addEventListener('keydown', onKeyDown);
 
   return {
-    enable()  { _enabled = true;  },
-    disable() { _enabled = false; },
-    destroy() { document.removeEventListener('keydown', onKeyDown); },
+    enable() {
+      _enabled = true;
+    },
+    disable() {
+      _enabled = false;
+    },
+    destroy() {
+      document.removeEventListener('keydown', onKeyDown);
+    },
   };
 }

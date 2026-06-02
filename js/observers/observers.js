@@ -4,8 +4,7 @@
  * Handles active section detection and responsive layout changes.
  */
 
-import { CLASSES }    from '../core/constants.js';
-import { debounce }   from '../utils/performance.js';
+import { debounce } from '../utils/performance.js';
 
 /**
  * Create an IntersectionObserver for active section detection
@@ -23,35 +22,38 @@ export function createSectionObserver(sections, onActiveChange) {
   // where both origin and destination are ~50% visible simultaneously.
   const root = sections[0]?.closest('.fp-wrapper') || null;
 
-  const observer = new IntersectionObserver((entries) => {
-    let maxRatio = 0;
-    let maxEntry = null;
+  const observer = new IntersectionObserver(
+    entries => {
+      let maxRatio = 0;
+      let maxEntry = null;
 
-    for (const entry of entries) {
-      if (entry.intersectionRatio > maxRatio) {
-        maxRatio = entry.intersectionRatio;
-        maxEntry = entry;
+      for (const entry of entries) {
+        if (entry.intersectionRatio > maxRatio) {
+          maxRatio = entry.intersectionRatio;
+          maxEntry = entry;
+        }
       }
-    }
 
-    if (maxEntry && maxRatio >= 0.6) {
-      const index = sections.indexOf(maxEntry.target);
-      if (index !== -1) {
-        onActiveChange(index, maxEntry);
+      if (maxEntry && maxRatio >= 0.6) {
+        const index = sections.indexOf(maxEntry.target);
+        if (index !== -1) {
+          onActiveChange(index, maxEntry);
+        }
       }
+    },
+    {
+      root,
+      threshold: [0, 0.5, 0.6, 0.75, 1.0],
+      rootMargin: '0px',
     }
-  }, {
-    root,
-    threshold: [0, 0.5, 0.6, 0.75, 1.0],
-    rootMargin: '0px',
-  });
+  );
 
   sections.forEach(s => observer.observe(s));
 
   return {
     destroy() {
       observer.disconnect();
-    }
+    },
   };
 }
 
@@ -67,7 +69,7 @@ export function createResizeObserver(container, onResize, debounceMs = 200) {
     // Fallback to window resize event
     const handler = debounce(() => {
       onResize({
-        width:  window.innerWidth,
+        width: window.innerWidth,
         height: window.innerHeight,
       });
     }, debounceMs);
@@ -77,11 +79,11 @@ export function createResizeObserver(container, onResize, debounceMs = 200) {
       destroy() {
         window.removeEventListener('resize', handler);
         handler.cancel();
-      }
+      },
     };
   }
 
-  const debouncedResize = debounce((entries) => {
+  const debouncedResize = debounce(entries => {
     for (const entry of entries) {
       const { width, height } = entry.contentRect;
       onResize({ width, height, entry });
@@ -95,7 +97,7 @@ export function createResizeObserver(container, onResize, debounceMs = 200) {
     destroy() {
       observer.disconnect();
       debouncedResize.cancel();
-    }
+    },
   };
 }
 
@@ -107,24 +109,25 @@ export function createResizeObserver(container, onResize, debounceMs = 200) {
  * @returns {{ destroy(): void }}
  */
 export function createMutationObserver(container, onMutation) {
-  const observer = new MutationObserver(debounce((mutations) => {
-    // Filter for meaningful changes (ignore attribute updates)
-    const structural = mutations.filter(m =>
-      m.type === 'childList' &&
-      (m.addedNodes.length > 0 || m.removedNodes.length > 0)
-    );
-    if (structural.length > 0) onMutation(structural);
-  }, 300));
+  const observer = new MutationObserver(
+    debounce(mutations => {
+      // Filter for meaningful changes (ignore attribute updates)
+      const structural = mutations.filter(
+        m => m.type === 'childList' && (m.addedNodes.length > 0 || m.removedNodes.length > 0)
+      );
+      if (structural.length > 0) onMutation(structural);
+    }, 300)
+  );
 
   observer.observe(container, {
     childList: true,
-    subtree:   true,
+    subtree: true,
     // Don't observe attribute changes — too noisy
   });
 
   return {
     destroy() {
       observer.disconnect();
-    }
+    },
   };
 }

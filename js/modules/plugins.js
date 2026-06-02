@@ -87,13 +87,13 @@ export function createGSAPPlugin(gsap) {
   return {
     name: 'gsap-integration',
 
-    onLoad({ section, index }) {
+    onLoad({ section, index: _index }) {
       const tl = gsap.timeline();
       const animatables = section.querySelectorAll('[data-gsap-from]');
 
-      animatables.forEach((el) => {
-        const from  = JSON.parse(el.getAttribute('data-gsap-from')  || '{}');
-        const to    = JSON.parse(el.getAttribute('data-gsap-to')    || '{}');
+      animatables.forEach(el => {
+        const from = JSON.parse(el.getAttribute('data-gsap-from') || '{}');
+        const to = JSON.parse(el.getAttribute('data-gsap-to') || '{}');
         const delay = parseFloat(el.getAttribute('data-gsap-delay') || '0');
         tl.fromTo(el, from, { ...to, delay });
       });
@@ -103,7 +103,7 @@ export function createGSAPPlugin(gsap) {
 
     onLeave({ section }) {
       gsap.killTweensOf(section.querySelectorAll('[data-gsap-from]'));
-    }
+    },
   };
 }
 
@@ -126,6 +126,6 @@ export function createLenisPlugin(lenis) {
     onLoad() {
       // Resume after transition completes
       requestAnimationFrame(() => lenis?.start());
-    }
+    },
   };
 }

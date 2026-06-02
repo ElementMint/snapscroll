@@ -5,8 +5,8 @@
  * Uses a single delegated click handler for performance.
  */
 
-import { CLASSES }                       from '../core/constants.js';
-import { createElement, addClass, removeClass, setAria } from '../utils/dom.js';
+import { CLASSES } from '../core/constants.js';
+import { createElement, setAria } from '../utils/dom.js';
 
 /**
  * @typedef {Object} NavigationModule
@@ -24,11 +24,17 @@ import { createElement, addClass, removeClass, setAria } from '../utils/dom.js';
  * @param {Function}     options.onDotClick    - Callback(index)
  * @returns {NavigationModule}
  */
-export function createNavigation({ container, count, tooltips = [], position = 'right', onDotClick }) {
+export function createNavigation({
+  container: _container,
+  count,
+  tooltips = [],
+  position = 'right',
+  onDotClick,
+}) {
   const nav = createElement('nav', {
-    class:      `${CLASSES.NAV} ${CLASSES.NAV}--${position}`,
+    class: `${CLASSES.NAV} ${CLASSES.NAV}--${position}`,
     'aria-label': 'Section navigation',
-    role:       'navigation',
+    role: 'navigation',
   });
 
   const ul = createElement('ul', {
@@ -41,16 +47,20 @@ export function createNavigation({ container, count, tooltips = [], position = '
     const tooltip = tooltips[i] || `Section ${i + 1}`;
 
     const btn = createElement('button', {
-      class:        CLASSES.NAV_DOT,
+      class: CLASSES.NAV_DOT,
       'aria-label': tooltip,
       'aria-current': i === 0 ? 'true' : 'false',
-      role:         'tab',
-      tabindex:     '0',
+      role: 'tab',
+      tabindex: '0',
       'data-fp-index': String(i),
     });
 
     if (tooltips[i]) {
-      const span = createElement('span', { class: 'fp-nav__tooltip', 'aria-hidden': 'true' }, tooltip);
+      const span = createElement(
+        'span',
+        { class: 'fp-nav__tooltip', 'aria-hidden': 'true' },
+        tooltip
+      );
       btn.appendChild(span);
     }
 
@@ -98,7 +108,7 @@ export function createNavigation({ container, count, tooltips = [], position = '
     destroy() {
       nav.removeEventListener('click', handleClick);
       nav.remove();
-    }
+    },
   };
 }
 
@@ -107,7 +117,7 @@ export function createNavigation({ container, count, tooltips = [], position = '
  * @param {HTMLElement} container
  * @returns {{ update(pct: number): void, destroy(): void }}
  */
-export function createProgressBar(container) {
+export function createProgressBar(_container) {
   const bar = createElement('div', { class: CLASSES.PROGRESS });
   const fill = createElement('div', { class: CLASSES.PROGRESS_BAR, 'aria-hidden': 'true' });
   bar.appendChild(fill);
@@ -119,6 +129,6 @@ export function createProgressBar(container) {
     },
     destroy() {
       bar.remove();
-    }
+    },
   };
 }

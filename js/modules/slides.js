@@ -5,9 +5,9 @@
  * Each section with [data-fp-slide] children gets a slide container.
  */
 
-import { CLASSES, ATTRS, EVENTS }                from '../core/constants.js';
-import { addClass, removeClass, $$, createElement } from '../utils/dom.js';
-import { PASSIVE_OPTS }                           from '../utils/performance.js';
+import { CLASSES, EVENTS } from '../core/constants.js';
+import { $$, createElement } from '../utils/dom.js';
+import { PASSIVE_OPTS } from '../utils/performance.js';
 
 /**
  * Initialize horizontal slides for a section
@@ -22,8 +22,8 @@ import { PASSIVE_OPTS }                           from '../utils/performance.js'
  */
 export function initSectionSlides(section, options = {}) {
   const {
-    loop             = false,
-    autoplay         = false,
+    loop = false,
+    autoplay = false,
     autoplayInterval = 5000,
     onSlideChange,
     eventBus,
@@ -32,7 +32,7 @@ export function initSectionSlides(section, options = {}) {
   const slides = $$(`.${CLASSES.SLIDE}`, section);
   if (!slides.length) return null;
 
-  let activeIndex  = 0;
+  let activeIndex = 0;
   let autoplayTimer = null;
 
   // Create slide wrapper if not already structured
@@ -45,26 +45,37 @@ export function initSectionSlides(section, options = {}) {
   }
 
   // Slide controls (arrows)
-  const prevBtn = createElement('button', {
-    class:        'fp-slide-arrow fp-slide-arrow--prev',
-    'aria-label': 'Previous slide',
-    tabindex:     '0',
-  }, '‹');
+  const prevBtn = createElement(
+    'button',
+    {
+      class: 'fp-slide-arrow fp-slide-arrow--prev',
+      'aria-label': 'Previous slide',
+      tabindex: '0',
+    },
+    '‹'
+  );
 
-  const nextBtn = createElement('button', {
-    class:        'fp-slide-arrow fp-slide-arrow--next',
-    'aria-label': 'Next slide',
-    tabindex:     '0',
-  }, '›');
+  const nextBtn = createElement(
+    'button',
+    {
+      class: 'fp-slide-arrow fp-slide-arrow--next',
+      'aria-label': 'Next slide',
+      tabindex: '0',
+    },
+    '›'
+  );
 
   section.appendChild(prevBtn);
   section.appendChild(nextBtn);
 
   // Slide dots
-  const dotsContainer = createElement('div', { class: 'fp-slides-nav', 'aria-label': 'Slide navigation' });
+  const dotsContainer = createElement('div', {
+    class: 'fp-slides-nav',
+    'aria-label': 'Slide navigation',
+  });
   const dotBtns = slides.map((_, i) => {
     const dot = createElement('button', {
-      class:        'fp-slides-nav__dot',
+      class: 'fp-slides-nav__dot',
       'aria-label': `Slide ${i + 1}`,
       'aria-current': i === 0 ? 'true' : 'false',
       'data-slide-index': String(i),
@@ -76,7 +87,7 @@ export function initSectionSlides(section, options = {}) {
 
   function setActiveSlide(index, source = 'api') {
     const prev = activeIndex;
-    let   next = index;
+    let next = index;
 
     if (loop) {
       next = ((next % slides.length) + slides.length) % slides.length;
@@ -93,7 +104,7 @@ export function initSectionSlides(section, options = {}) {
       slide.classList.toggle(CLASSES.ACTIVE, isActive);
       slide.setAttribute('aria-hidden', String(!isActive));
       if (isActive) slide.removeAttribute('tabindex');
-      else          slide.setAttribute('tabindex', '-1');
+      else slide.setAttribute('tabindex', '-1');
     });
 
     dotBtns.forEach((dot, i) => {
@@ -105,7 +116,7 @@ export function initSectionSlides(section, options = {}) {
     // Scroll snap: use scrollLeft on the container
     const slideWidth = slideContainer.offsetWidth;
     slideContainer.scrollTo({
-      left:     slideWidth * next,
+      left: slideWidth * next,
       behavior: 'smooth',
     });
 
@@ -114,8 +125,12 @@ export function initSectionSlides(section, options = {}) {
   }
 
   // Arrow click handlers
-  function onPrevClick() { setActiveSlide(activeIndex - 1); }
-  function onNextClick() { setActiveSlide(activeIndex + 1); }
+  function onPrevClick() {
+    setActiveSlide(activeIndex - 1);
+  }
+  function onNextClick() {
+    setActiveSlide(activeIndex + 1);
+  }
   function onDotClick(e) {
     const dot = e.target.closest('.fp-slides-nav__dot');
     if (!dot) return;
@@ -145,7 +160,9 @@ export function initSectionSlides(section, options = {}) {
     autoplayTimer = setInterval(() => {
       const next = loop
         ? (activeIndex + 1) % slides.length
-        : activeIndex < slides.length - 1 ? activeIndex + 1 : 0;
+        : activeIndex < slides.length - 1
+          ? activeIndex + 1
+          : 0;
       setActiveSlide(next, 'autoplay');
     }, autoplayInterval);
   }
@@ -162,26 +179,34 @@ export function initSectionSlides(section, options = {}) {
   startAutoplay();
 
   // Pause autoplay on user interaction
-  slideContainer.addEventListener('pointerenter', stopAutoplay,  PASSIVE_OPTS);
+  slideContainer.addEventListener('pointerenter', stopAutoplay, PASSIVE_OPTS);
   slideContainer.addEventListener('pointerleave', startAutoplay, PASSIVE_OPTS);
 
   return {
-    get activeIndex() { return activeIndex; },
-    goTo(i)  { setActiveSlide(i); },
-    next()   { setActiveSlide(activeIndex + 1); },
-    prev()   { setActiveSlide(activeIndex - 1); },
+    get activeIndex() {
+      return activeIndex;
+    },
+    goTo(i) {
+      setActiveSlide(i);
+    },
+    next() {
+      setActiveSlide(activeIndex + 1);
+    },
+    prev() {
+      setActiveSlide(activeIndex - 1);
+    },
     destroy() {
       stopAutoplay();
       prevBtn.removeEventListener('click', onPrevClick);
       nextBtn.removeEventListener('click', onNextClick);
       dotsContainer.removeEventListener('click', onDotClick);
       slideContainer.removeEventListener('scroll', onSlideScroll, PASSIVE_OPTS);
-      slideContainer.removeEventListener('pointerenter', stopAutoplay,  PASSIVE_OPTS);
+      slideContainer.removeEventListener('pointerenter', stopAutoplay, PASSIVE_OPTS);
       slideContainer.removeEventListener('pointerleave', startAutoplay, PASSIVE_OPTS);
       prevBtn.remove();
       nextBtn.remove();
       dotsContainer.remove();
       if (scrollTimer) clearTimeout(scrollTimer);
-    }
+    },
   };
 }

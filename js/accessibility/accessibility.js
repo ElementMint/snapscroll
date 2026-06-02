@@ -5,9 +5,8 @@
  * and screen reader announcements for section transitions.
  */
 
-import { CLASSES, ATTRS }                from '../core/constants.js';
-import { createElement, setAria, addClass } from '../utils/dom.js';
-import { prefersReducedMotion }           from '../utils/performance.js';
+import { createElement } from '../utils/dom.js';
+import { prefersReducedMotion } from '../utils/performance.js';
 
 /**
  * @typedef {Object} A11yModule
@@ -26,19 +25,23 @@ import { prefersReducedMotion }           from '../utils/performance.js';
 export function createA11yModule(container, sections) {
   // ARIA live region for announcements
   const liveRegion = createElement('div', {
-    class:          'fp-sr-only',
-    'aria-live':    'polite',
-    'aria-atomic':  'true',
-    'aria-relevant':'additions',
-    role:           'status',
+    class: 'fp-sr-only',
+    'aria-live': 'polite',
+    'aria-atomic': 'true',
+    'aria-relevant': 'additions',
+    role: 'status',
   });
   document.body.appendChild(liveRegion);
 
   // Add skip link
-  const skipLink = createElement('a', {
-    href:  '#fp-main-content',
-    class: 'fp-skip-link',
-  }, 'Skip to main content');
+  const skipLink = createElement(
+    'a',
+    {
+      href: '#fp-main-content',
+      class: 'fp-skip-link',
+    },
+    'Skip to main content'
+  );
   document.body.insertBefore(skipLink, document.body.firstChild);
 
   // Set section ARIA roles and initial states
@@ -48,7 +51,7 @@ export function createA11yModule(container, sections) {
     }
     if (!section.hasAttribute('aria-label')) {
       const heading = section.querySelector('h1,h2,h3,h4,h5,h6');
-      const label   = heading?.textContent?.trim() || `Section ${i + 1}`;
+      const label = heading?.textContent?.trim() || `Section ${i + 1}`;
       section.setAttribute('aria-label', label);
     }
     // Initially hide non-active sections from screen readers
@@ -83,14 +86,14 @@ export function createA11yModule(container, sections) {
    * @param {number} newIndex
    * @param {number} prevIndex
    */
-  function setActiveSection(newIndex, prevIndex) {
+  function setActiveSection(newIndex, _prevIndex) {
     const total = sections.length;
 
     sections.forEach((section, i) => {
       const isActive = i === newIndex;
       section.setAttribute('aria-hidden', String(!isActive));
       if (isActive) section.removeAttribute('tabindex');
-      else          section.setAttribute('tabindex', '-1');
+      else section.setAttribute('tabindex', '-1');
     });
 
     const activeSection = sections[newIndex];
@@ -110,7 +113,7 @@ export function createA11yModule(container, sections) {
 
   // Listen for OS-level motion preference changes
   const motionQuery = window.matchMedia?.('(prefers-reduced-motion: reduce)');
-  const onMotionChange = (e) => {
+  const onMotionChange = e => {
     document.documentElement.classList.toggle(CLASSES.REDUCED_MOTION, e.matches);
   };
   motionQuery?.addEventListener('change', onMotionChange);
@@ -126,7 +129,7 @@ export function createA11yModule(container, sections) {
       liveRegion.remove();
       skipLink.remove();
       motionQuery?.removeEventListener('change', onMotionChange);
-    }
+    },
   };
 }
 
@@ -139,9 +142,7 @@ export function manageFocusOnSection(section) {
   // Move focus to the section for screen reader users
   // Use preventScroll to avoid double-scroll
   const focusTarget =
-    section.querySelector('[autofocus]') ||
-    section.querySelector('h1,h2,h3') ||
-    section;
+    section.querySelector('[autofocus]') || section.querySelector('h1,h2,h3') || section;
 
   requestAnimationFrame(() => {
     focusTarget.focus({ preventScroll: true });
