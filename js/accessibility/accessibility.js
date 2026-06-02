@@ -5,6 +5,7 @@
  * and screen reader announcements for section transitions.
  */
 
+import { CLASSES } from '../core/constants.js';
 import { createElement } from '../utils/dom.js';
 import { prefersReducedMotion } from '../utils/performance.js';
 
