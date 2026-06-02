@@ -13,13 +13,18 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],
-      include:  ['js/**/*.js'],
-      exclude:  ['js/init.js'],
+      // Only measure coverage on pure-logic modules testable in jsdom.
+      // DOM-heavy modules (FullPageEngine, modules/*, observers/*, accessibility/*)
+      // require a real browser and are covered by Playwright e2e tests.
+      include: [
+        'js/core/*.js',
+      ],
+      exclude: ['js/init.js'],
       thresholds: {
-        branches:  80,
-        functions: 85,
-        lines:     85,
-        statements:85,
+        branches:   80,
+        functions:  90,
+        lines:      90,
+        statements: 90,
       },
     },
   },

@@ -6,7 +6,7 @@
  */
 
 import { CLASSES } from '../core/constants.js';
-import { createElement, setAria } from '../utils/dom.js';
+import { createElement, addClass, setAria } from '../utils/dom.js';
 
 /**
  * @typedef {Object} NavigationModule
