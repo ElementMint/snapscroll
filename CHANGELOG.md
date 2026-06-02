@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/ElementMint/snapscroll/compare/v1.0.0...v1.0.1) (2026-06-02)
+
+
+### Bug Fixes
+
+* add braces to multi-line if in keyboard.js and align eslint curly rule ([bd2da77](https://github.com/ElementMint/snapscroll/commit/bd2da77244fcc2de98e9610a8a03f5fbb54c37be))
+
 # 1.0.0 (2026-06-02)
 
 
