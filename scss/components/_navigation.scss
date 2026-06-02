@@ -1,0 +1,149 @@
+// ─── Navigation Dots ─────────────────────────────────────────────────────────
+// fullpage/scss/components/_navigation.scss
+
+@use '../base/variables' as *;
+
+.fp-nav {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: var(--fp-z-nav, 100);
+
+  // GPU-safe positioning (only translate, no top/left animation)
+  will-change: transform;
+
+  &--right { right: var(--fp-nav-offset, 24px); }
+  &--left  { left:  var(--fp-nav-offset, 24px); }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--fp-nav-dot-gap, 16px);
+  }
+
+  // ─── Dot button ────────────────────────────────────────────────────────
+  &__dot {
+    display: block;
+    width:  var(--fp-nav-dot-size, 10px);
+    height: var(--fp-nav-dot-size, 10px);
+    padding: 0;
+    margin: 0;
+    background: $fp-nav-dot-color;
+    border: 1.5px solid $fp-nav-dot-border;
+    border-radius: 50%;
+    cursor: pointer;
+    position: relative;
+    transition:
+      background-color 300ms $fp-transition-easing,
+      transform        300ms $fp-transition-easing,
+      border-color     300ms $fp-transition-easing;
+
+    // Enlarged hit target (no layout impact)
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+    }
+
+    // Focus visible ring
+    &:focus-visible {
+      outline: 2px solid rgba(255,255,255,0.8);
+      outline-offset: 3px;
+    }
+
+    // Active state
+    &--active,
+    &[aria-current="true"] {
+      background: $fp-nav-dot-active-color;
+      border-color: $fp-nav-dot-active-color;
+      transform: scale(1.3);
+    }
+
+    // Hover (non-touch)
+    @media (hover: hover) {
+      &:hover {
+        background: rgba(255,255,255,0.7);
+        transform: scale(1.2);
+      }
+    }
+
+    // Tooltip
+    .fp-nav__tooltip {
+      position: absolute;
+      right: calc(100% + 12px);
+      top: 50%;
+      transform: translateY(-50%);
+      background: $fp-tooltip-bg;
+      color: $fp-tooltip-color;
+      font-size: $fp-tooltip-font-size;
+      padding: 4px 8px;
+      border-radius: $fp-tooltip-radius;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 200ms ease;
+
+      // Arrow
+      &::after {
+        content: '';
+        position: absolute;
+        left: 100%;
+        top: 50%;
+        transform: translateY(-50%);
+        border: 5px solid transparent;
+        border-left-color: $fp-tooltip-bg;
+      }
+
+      .fp-nav--left & {
+        right: auto;
+        left: calc(100% + 12px);
+
+        &::after {
+          left: auto;
+          right: 100%;
+          border-left-color: transparent;
+          border-right-color: $fp-tooltip-bg;
+        }
+      }
+    }
+
+    @media (hover: hover) {
+      &:hover .fp-nav__tooltip {
+        opacity: 1;
+      }
+    }
+  }
+
+  // ─── Mobile: hide or reduce ─────────────────────────────────────────────
+  @media (max-width: #{$fp-breakpoint-mobile}) {
+    &__dot {
+      width:  8px;
+      height: 8px;
+    }
+  }
+}
+
+// ─── Progress Bar ─────────────────────────────────────────────────────────────
+.fp-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: $fp-progress-height;
+  background: $fp-progress-bg;
+  z-index: var(--fp-z-progress, 200);
+
+  &__bar {
+    height: 100%;
+    background: $fp-progress-color;
+    transform-origin: left center;
+    transform: scaleX(0);
+    transition: transform 400ms $fp-transition-easing;
+    will-change: transform;
+  }
+}

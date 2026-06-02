@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FullPage Engine — AEM integration pattern</title>
+  <link rel="stylesheet" href="../dist/fullpage-engine.css">
+
+  <!--
+    AEM INTEGRATION NOTES
+    ═══════════════════════════════════════════════════════════════════════
+
+    1. Detection:
+       The engine auto-detects author mode using five strategies (see
+       performance.js: isAEMAuthorMode). When detected, it attaches
+       .fp-author-mode and returns without initialising.
+
+    2. HTL (Sightly) markup:
+       Your HTL component should output the fp-wrapper structure.
+       The engine scans for .fp-section children — they can be
+       any nested AEM component (parsys, iparsys, etc.).
+
+    3. SPA Editor:
+       After cq-editor-loaded events (component refreshes, page edits),
+       call fp.reinit() to rescan sections.
+
+    4. Content policy:
+       Set default config via clientlib or the sling:configResource
+       approach — both work since data-fp-config is just a JSON attr.
+
+    ═══════════════════════════════════════════════════════════════════════
+  -->
+
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; }
+
+    /* Author mode: section layout visible, no snap */
+    .fp-author-mode .fp-section {
+      min-height: 400px;
+      border: 2px dashed rgba(0,0,0,0.15);
+      margin-bottom: 8px;
+    }
+    .fp-author-mode .fp-section::before {
+      content: 'Section — ' attr(data-fp-anchor);
+      display: block;
+      padding: 8px 16px;
+      background: rgba(0,0,0,0.05);
+      font-size: 12px;
+      font-family: monospace;
+    }
+
+    .section { display: flex; align-items: center; justify-content: center; color: #fff; }
+    .s1 { background: #1e293b; }
+    .s2 { background: #0f172a; }
+    .s3 { background: #1e293b; }
+  </style>
+</head>
+<body>
+
+<!--
+  HTL example (pseudo-code):
+
+  <div class="fp-wrapper"
+       data-fp-auto
+       data-sly-resource="${'fullpage-config' @ resourceType='mysite/components/fullpage-config'}">
+
+    <sly data-sly-list.section="${currentPage.listChildren}">
+      <section class="fp-section"
+               data-fp-anchor="${section.name}"
+               id="${section.name}">
+        <sly data-sly-resource="${section.path + '/jcr:content/root'}" />
+      </section>
+    </sly>
+
+  </div>
+
+  Real HTML output:
+-->
+<div
+  id="aem-fullpage"
+  data-fp-config='{"navigation":true,"progressBar":true}'
+>
+  <section class="fp-section section s1" data-fp-anchor="hero"     id="hero">    <h1>Hero (AEM parsys)</h1></section>
+  <section class="fp-section section s2" data-fp-anchor="about"    id="about">   <h2>About (AEM iparsys)</h2></section>
+  <section class="fp-section section s3" data-fp-anchor="contact"  id="contact"> <h2>Contact</h2></section>
+</div>
+
+
+<script type="module">
+  import { FullPageEngine } from '../js/init.js';
+  import { isAEMAuthorMode } from '../js/utils/performance.js';
+
+  /**
+   * AEM-safe initialiser pattern.
+   * Use this in your AEM clientlib (e.g. mysite.fullpage category).
+   */
+  (function initFullPage() {
+    // Guard: never run in author/edit mode
+    if (isAEMAuthorMode()) {
+      console.info('[FullPage] AEM author mode — skipping init');
+      return;
+    }
+
+    const container = document.getElementById('aem-fullpage');
+    if (!container) return;
+
+    // Read config from the component's data attribute
+    // (set by the dialog / content policy via Sling Model)
+    const fp = new FullPageEngine(container, {
+      // Hardcoded defaults — overridden by data-fp-config
+      navigation:    true,
+      progressBar:   false,
+      loop:          false,
+      recordHistory: true,
+
+      onInit(instance) {
+        // Expose for AEM Clientcontext / Target integrations
+        window.AdobeDataLayer?.push({
+          event:   'fullpage.init',
+          section: instance.getActiveSection(),
+        });
+      },
+
+      afterLoad(section) {
+        // Adobe Analytics / Launch rule trigger
+        window.AdobeDataLayer?.push({
+          event:      'fullpage.sectionView',
+          sectionId:  section.id,
+          sectionUrl: window.location.hash,
+        });
+      },
+    });
+
+    // ── SPA Editor: re-init after component refresh ─────────────────────
+    // The Granite channel fires 'cq-editor-loaded' after edits.
+    // The MutationObserver inside the engine also catches structural changes
+    // automatically — this is a belt-and-suspenders approach.
+    document.addEventListener('cq-editor-loaded', () => {
+      if (!isAEMAuthorMode()) fp.reinit();
+    });
+
+    // ── Expose for console debugging in lower environments ──────────────
+    if (window.location.hostname.includes('localhost') ||
+        window.location.hostname.includes('.dev.') ||
+        window.location.hostname.includes('.stage.')) {
+      window.__fp = fp;
+    }
+
+  })();
+</script>
+
+</body>
+</html>

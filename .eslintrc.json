@@ -1,0 +1,24 @@
+{
+  "env": {
+    "browser": true,
+    "es2020": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 2020,
+    "sourceType": "module"
+  },
+  "rules": {
+    "no-unused-vars":     ["error", { "argsIgnorePattern": "^_" }],
+    "no-console":         ["warn",  { "allow": ["warn", "error", "info", "debug"] }],
+    "eqeqeq":            ["error", "always"],
+    "no-var":             "error",
+    "prefer-const":       "error",
+    "prefer-arrow-callback": "error",
+    "no-duplicate-imports":  "error",
+    "no-shadow":          "error",
+    "curly":              ["error", "multi-line"],
+    "no-throw-literal":  "error",
+    "prefer-template":    "error"
+  },
+  "ignorePatterns": ["dist/", "coverage/", "node_modules/"]
+}

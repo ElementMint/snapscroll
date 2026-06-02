@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FullPage Engine — Plugin system</title>
+  <link rel="stylesheet" href="../dist/fullpage-engine.css">
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; color: #fff; }
+    .section { display: flex; align-items: center; justify-content: center; text-align: center; padding: 40px; }
+    .s1 { background: #080812; }
+    .s2 { background: #0C0C1A; }
+    .s3 { background: #100820; }
+
+    /* Data-attribute animation targets */
+    [data-fp-animate] {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 600ms cubic-bezier(0.645,0.045,0.355,1),
+                  transform 600ms cubic-bezier(0.645,0.045,0.355,1);
+      transition-delay: var(--fp-delay, 0ms);
+    }
+    .fp-section.fp-active [data-fp-animate] { opacity: 1; transform: none; }
+    @media (prefers-reduced-motion: reduce) {
+      [data-fp-animate] { opacity: 1 !important; transform: none !important; transition: none !important; }
+    }
+
+    /* Plugin log overlay */
+    #plugin-log {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      width: 260px;
+      background: rgba(0,0,0,0.7);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 11px;
+      z-index: 999;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    #plugin-log p { margin: 2px 0; opacity: 0.7; }
+    #plugin-log .hook { color: #A78BFA; }
+    #plugin-log .plugin-name { color: #34D399; }
+  </style>
+</head>
+<body>
+
+<div id="plugin-log">
+  <p style="opacity:1;font-weight:500;margin-bottom:8px">Plugin activity log</p>
+</div>
+
+<div id="fp">
+
+  <section class="fp-section section s1" data-fp-anchor="intro">
+    <div>
+      <h1 data-fp-animate style="--fp-delay:0ms">Plugin system</h1>
+      <p data-fp-animate style="--fp-delay:120ms;opacity:0.6">Multiple plugins run in registration order</p>
+    </div>
+  </section>
+
+  <section class="fp-section section s2" data-fp-anchor="features">
+    <div>
+      <h2 data-fp-animate style="--fp-delay:0ms">Features section</h2>
+      <p data-fp-animate style="--fp-delay:120ms;opacity:0.6">Each plugin hooks into the same lifecycle</p>
+    </div>
+  </section>
+
+  <section class="fp-section section s3" data-fp-anchor="contact">
+    <div>
+      <h2 data-fp-animate style="--fp-delay:0ms">Contact</h2>
+      <p data-fp-animate style="--fp-delay:120ms;opacity:0.6">onLoad fires for every plugin on arrival</p>
+    </div>
+  </section>
+
+</div>
+
+<script type="module">
+  import { FullPageEngine } from '../js/init.js';
+
+  const log = document.getElementById('plugin-log');
+
+  function addLog(plugin, hook, detail = '') {
+    const p = document.createElement('p');
+    p.innerHTML = `<span class="plugin-name">[${plugin}]</span> <span class="hook">${hook}</span> ${detail}`;
+    log.appendChild(p);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  // ─── Plugin 1: Analytics ─────────────────────────────────────────────────
+  const analyticsPlugin = {
+    name: 'analytics',
+
+    onInit({ instance }) {
+      addLog('analytics', 'onInit', `${instance.getActiveSection()} sections`);
+    },
+
+    onLeave({ section, dest }) {
+      addLog('analytics', 'onLeave', `→ ${dest}`);
+    },
+
+    onLoad({ section, index }) {
+      addLog('analytics', 'onLoad', `#${section.id} (${index})`);
+      // Real implementation would call gtag, segment, etc.
+    },
+
+    onResize({ width }) {
+      addLog('analytics', 'onResize', `${width}px`);
+    },
+
+    onDestroy() {
+      addLog('analytics', 'onDestroy');
+    },
+  };
+
+  // ─── Plugin 2: Video autoplay ─────────────────────────────────────────────
+  const videoPlugin = {
+    name: 'video-autoplay',
+
+    onLoad({ section }) {
+      const videos = section.querySelectorAll('video[data-fp-video]');
+      videos.forEach(v => v.play().catch(() => {}));
+      if (videos.length) addLog('video', 'onLoad', `playing ${videos.length} video(s)`);
+    },
+
+    onLeave({ section }) {
+      const videos = section.querySelectorAll('video[data-fp-video]');
+      videos.forEach(v => { v.pause(); v.currentTime = 0; });
+    },
+  };
+
+  // ─── Plugin 3: Entry animations (CSS-based GSAP-style) ───────────────────
+  const animPlugin = {
+    name: 'css-animations',
+
+    onLoad({ section }) {
+      const targets = section.querySelectorAll('[data-fp-animate]');
+      targets.forEach(el => {
+        el.style.opacity   = '0';
+        el.style.transform = 'translateY(20px)';
+        // Force reflow then re-apply the active class transition
+        requestAnimationFrame(() => {
+          el.style.opacity   = '';
+          el.style.transform = '';
+        });
+      });
+      if (targets.length) addLog('anim', 'onLoad', `${targets.length} elements`);
+    },
+  };
+
+  // ─── Init with all three plugins ─────────────────────────────────────────
+  const fp = new FullPageEngine('#fp', {
+    navigation: true,
+    progressBar: true,
+    plugins: [analyticsPlugin, videoPlugin, animPlugin],
+  });
+
+  // Register a 4th plugin after init (via fp.use)
+  fp.use({
+    name: 'runtime-plugin',
+    onLoad({ section }) {
+      addLog('runtime', 'onLoad', `#${section.id}`);
+    },
+  });
+
+  addLog('system', 'ready', `${fp.getActiveSection()} active`);
+</script>
+
+</body>
+</html>

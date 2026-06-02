@@ -1,0 +1,84 @@
+# Changelog
+
+All notable changes to FullPage Engine are documented here.
+Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+---
+
+## [1.0.0] — 2025-05-15
+
+### Added
+
+**Core engine**
+- `FullPageEngine` class with full lifecycle management
+- CSS Scroll Snap as the primary scroll mechanism (replaces all JS position hacks)
+- `scrollIntoView` for programmatic navigation (smooth + instant)
+- Infinite vertical loop via `loop: true`
+- Responsive mode via `responsiveWidth` / `responsiveHeight`
+
+**Modules**
+- Touch swipe module — angle threshold filtering, passive listeners
+- Keyboard module — Arrow, PageUp/Down, Home, End, Space
+- Wheel module — delta thresholding + cooldown to prevent over-scroll
+- Horizontal slides with CSS scroll snap (X axis)
+- Overflow sections — inner scroll before yielding to engine
+- Lazy loading via `IntersectionObserver` + `data-fp-lazy-src`
+
+**Navigation**
+- Side dot navigation with tooltips
+- Top progress bar
+- URL hash management via `pushState` / `replaceState` (no scroll jump)
+- Deep link resolution on page load
+
+**Accessibility**
+- Skip link injection
+- `aria-label` from heading text
+- `aria-hidden` on inactive sections
+- Live region announcements for screen readers
+- `prefers-reduced-motion` detection + CSS class toggle
+- Focus management to new section on navigation
+
+**Observers**
+- `IntersectionObserver` for active-section detection
+- `ResizeObserver` for responsive breakpoints
+- `MutationObserver` for AEM/SPA dynamic DOM changes
+
+**Plugin system**
+- Plugin interface with 6 lifecycle hooks
+- `createGSAPPlugin(gsap)` — data-attribute driven timeline
+- `createLenisPlugin(lenis)` — pause/resume compat
+
+**Events**
+- DOM `CustomEvent` dispatch on the wrapper element
+- Cancellable `fp:beforeLeave` via `e.preventDefault()`
+- Internal pub/sub via `fp.on()` with unsubscribe return
+
+**AEM**
+- Five-strategy author mode detection
+- `fp-author-mode` CSS class that resets all snap behavior
+- `fp.reinit()` for SPA editor refreshes
+- MutationObserver auto-reinit on structural DOM change
+
+**Performance**
+- `content-visibility: auto` on all sections
+- `will-change: contents` only on the active section
+- `contain: layout paint` on all sections
+- `100svh` (small viewport height) for mobile browser chrome correctness
+
+**Developer experience**
+- Full TypeScript declarations (`fullpage.d.ts`)
+- Vite build config (ESM / CJS / IIFE bundles)
+- Vitest test suite with jsdom environment
+- 5 usage examples
+
+---
+
+## [Unreleased]
+
+### Planned
+- `data-fp-speed` per-section transition speed override
+- `fp.pause()` / `fp.resume()` API
+- Prefers-contrast media query support
+- Vertical slides (X + Y snap combined)
+- Scroll progress per section (for parallax hooks)
+- First-class Astro / Next.js integration guide

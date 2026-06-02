@@ -1,0 +1,52 @@
+// ─── Base Reset & Foundation ─────────────────────────────────────────────────
+// fullpage/scss/base/_reset.scss
+
+// Box sizing inheritance pattern (minimal reset)
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+html {
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+
+  // Respect system motion preference at root level
+  @media (prefers-reduced-motion: reduce) {
+    scroll-behavior: auto;
+  }
+}
+
+// ─── Screen-reader only utility ──────────────────────────────────────────────
+.fp-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// ─── Skip link ───────────────────────────────────────────────────────────────
+.fp-skip-link {
+  position: fixed;
+  top: -100%;
+  left: 16px;
+  z-index: var(--fp-z-skip-link, 999);
+  padding: 8px 16px;
+  background: #000;
+  color: #fff;
+  font-size: 14px;
+  text-decoration: none;
+  border-radius: 0 0 4px 4px;
+  transition: top 0.2s ease;
+  outline-offset: 2px;
+
+  &:focus {
+    top: 0;
+  }
+}

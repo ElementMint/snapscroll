@@ -1,0 +1,132 @@
+{
+  "name": "snapscroll",
+  "version": "1.0.0",
+  "description": "Production-grade, accessibility-first fullpage scrolling engine. CSS Scroll Snap. Zero dependencies.",
+  "license": "MIT",
+  "type": "module",
+  "main":    "./dist/fullpage-engine.cjs",
+  "module":  "./dist/fullpage-engine.js",
+  "browser": "./dist/fullpage-engine.iife.js",
+  "types":   "./fullpage.d.ts",
+  "exports": {
+    ".": {
+      "import":  "./dist/fullpage-engine.js",
+      "require": "./dist/fullpage-engine.cjs",
+      "types":   "./fullpage.d.ts"
+    },
+    "./css": "./dist/fullpage-engine.css"
+  },
+  "files": [
+    "dist",
+    "fullpage.d.ts",
+    "js",
+    "scss",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "sideEffects": [
+    "dist/fullpage-engine.css",
+    "scss/**"
+  ],
+  "scripts": {
+    "dev":            "vite",
+    "build":          "vite build && npm run build:css && npm run build:types",
+    "build:css":      "sass scss/fullpage.scss dist/fullpage-engine.css --style=compressed --no-source-map",
+    "build:types":    "tsc js/init.js --declaration --emitDeclarationOnly --allowJs --outDir dist --module ES2020 --target ES2020 --moduleResolution node --skipLibCheck",
+    "preview":        "vite --host localhost --port 4173 --open /demo.html",
+    "preview:dist":   "vite preview",
+    "lint":           "eslint js/**/*.js",
+    "lint:fix":       "eslint js/**/*.js --fix",
+    "format":         "prettier --write \"js/**/*.js\" \"scss/**/*.scss\"",
+    "test":           "vitest run",
+    "test:watch":     "vitest",
+    "test:cover":     "vitest run --coverage",
+    "size":           "size-limit",
+    "prepare":        "husky",
+    "prepublishOnly": "npm run lint && npm test && npm run build && npm run size",
+    "release":        "semantic-release"
+  },
+  "keywords": [
+    "fullpage",
+    "scroll-snap",
+    "scrolling",
+    "fullscreen",
+    "sections",
+    "accessibility",
+    "a11y",
+    "performance",
+    "vanilla-js",
+    "no-dependencies",
+    "aem",
+    "animation",
+    "slider",
+    "presentation"
+  ],
+  "devDependencies": {
+    "@commitlint/cli":                   "^19.0.0",
+    "@commitlint/config-conventional":   "^19.0.0",
+    "@semantic-release/changelog":       "^6.0.0",
+    "@semantic-release/git":             "^10.0.0",
+    "@semantic-release/github":          "^10.0.0",
+    "@semantic-release/npm":             "^12.0.0",
+    "@size-limit/preset-small-lib":      "^11.0.0",
+    "@vitest/coverage-v8":               "^1.0.0",
+    "eslint":                            "^8.0.0",
+    "husky":                             "^9.0.0",
+    "lint-staged":                       "^15.0.0",
+    "prettier":                          "^3.0.0",
+    "sass":                              "^1.70.0",
+    "semantic-release":                  "^24.0.0",
+    "size-limit":                        "^11.0.0",
+    "typescript":                        "^5.0.0",
+    "vite":                              "^5.0.0",
+    "vitest":                            "^1.0.0"
+  },
+  "release": {
+    "branches": ["main"],
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      ["@semantic-release/changelog", {
+        "changelogFile": "CHANGELOG.md"
+      }],
+      ["@semantic-release/npm", {
+        "npmPublish": true
+      }],
+      ["@semantic-release/git", {
+        "assets": ["CHANGELOG.md", "package.json"],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }],
+      "@semantic-release/github"
+    ]
+  },
+  "lint-staged": {
+    "js/**/*.js": ["eslint --fix", "prettier --write"],
+    "scss/**/*.scss": ["prettier --write"]
+  },
+  "size-limit": [
+    {
+      "path": "./dist/fullpage-engine.js",
+      "limit": "15 kB"
+    },
+    {
+      "path": "./dist/fullpage-engine.iife.js",
+      "limit": "15 kB"
+    },
+    {
+      "path": "./dist/fullpage-engine.css",
+      "limit": "4 kB"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url":  "https://github.com/ElementMint/snapscroll"
+  },
+  "bugs": {
+    "url": "https://github.com/ElementMint/snapscroll/issues"
+  },
+  "homepage": "https://elementmint.github.io/snapscroll",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

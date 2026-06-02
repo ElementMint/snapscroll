@@ -1,0 +1,30 @@
+# Source (consumers use dist/)
+js/
+scss/
+
+# Dev config
+.github/
+.husky/
+.vscode/
+coverage/
+examples/
+
+# Config files
+vite.config.js
+vitest.config.js
+.eslintrc.*
+.eslintignore
+.prettierrc*
+commitlint.config.*
+
+# Test
+*.test.js
+*.spec.js
+
+# Sourcemaps (keeps package lean — dist/*.map excluded)
+dist/*.map
+
+# Misc
+.DS_Store
+*.log
+tmp/

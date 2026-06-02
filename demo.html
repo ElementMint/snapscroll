@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="FullPage Engine — Production-grade fullpage scrolling library demo">
+  <title>FullPage Engine — Demo</title>
+
+  <!--
+    PERFORMANCE NOTES:
+    - No render-blocking scripts (all JS deferred)
+    - CSS inlined for critical path (or use link preload)
+    - Font display: swap prevents FOIT
+    - Semantic HTML preserved for SEO
+  -->
+
+  <!-- Preload critical font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap"
+    rel="stylesheet"
+  >
+
+  <style>
+    /* ── Critical CSS (inline for LCP) ─────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html {
+      box-sizing: border-box;
+      scroll-behavior: smooth;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+    }
+
+    body {
+      margin: 0;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-weight: 300;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Wrapper ──────────────────────────────────────────────────── */
+    .fp-wrapper {
+      scroll-snap-type: y mandatory;
+      overflow-y: scroll;
+      overflow-x: hidden;
+      height: 100svh;
+      contain: layout style;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .fp-wrapper::-webkit-scrollbar { display: none; }
+
+    /* ── Sections ─────────────────────────────────────────────────── */
+    .fp-section {
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+      height: 100svh;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+      contain: layout paint;
+    }
+
+    /* ── Slides ───────────────────────────────────────────────────── */
+    .fp-slides {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      scroll-snap-type: x mandatory;
+      overflow-x: scroll;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .fp-slides::-webkit-scrollbar { display: none; }
+
+    .fp-slide {
+      scroll-snap-align: start;
+      scroll-snap-stop: always;
+      flex-shrink: 0;
+      width: 100%;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ── Nav dots ─────────────────────────────────────────────────── */
+    .fp-nav {
+      position: fixed;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 100;
+    }
+    .fp-nav__tooltip {
+      pointer-events: none;
+      position: absolute;
+      right: calc(100% + 12px);
+      top: 50%;
+      transform: translateY(-50%);
+      white-space: nowrap;
+      background: rgba(0,0,0,0.65);
+      color: #fff;
+      font-size: 11px;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      padding: 4px 8px;
+      border-radius: 4px;
+      opacity: 0;
+      transition: opacity 150ms;
+    }
+    .fp-nav__dot:hover .fp-nav__tooltip,
+    .fp-nav__dot:focus-visible .fp-nav__tooltip {
+      opacity: 1;
+    }
+    .fp-nav--right { right: 24px; }
+    .fp-nav ul {
+      list-style: none;
+      margin: 0; padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+    .fp-nav__dot {
+      display: block;
+      width: 10px; height: 10px;
+      padding: 0; margin: 0;
+      background: rgba(255,255,255,0.4);
+      border: 1.5px solid rgba(255,255,255,0.7);
+      border-radius: 50%;
+      cursor: pointer;
+      position: relative;
+      transition: background-color 300ms, transform 300ms, border-color 300ms;
+    }
+    .fp-nav__dot::before {
+      content: '';
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+    }
+    .fp-nav__dot:focus-visible {
+      outline: 2px solid rgba(255,255,255,0.8);
+      outline-offset: 3px;
+    }
+    .fp-nav__dot--active {
+      background: #fff;
+      border-color: #fff;
+      transform: scale(1.3);
+    }
+
+    /* ── Progress bar ─────────────────────────────────────────────── */
+    .fp-progress {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: rgba(255,255,255,0.2);
+      z-index: 200;
+    }
+    .fp-progress__bar {
+      height: 100%;
+      background: #fff;
+      transform-origin: left center;
+      transform: scaleX(0);
+      transition: transform 400ms cubic-bezier(0.645, 0.045, 0.355, 1);
+      will-change: transform;
+    }
+
+    /* ── Slide arrows ─────────────────────────────────────────────── */
+    .fp-slide-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+      background: rgba(0,0,0,0.3);
+      color: rgba(255,255,255,0.8);
+      border: none;
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 200ms;
+    }
+    .fp-slide-arrow--prev { left: 16px; }
+    .fp-slide-arrow--next { right: 16px; }
+    .fp-slide-arrow:focus-visible {
+      outline: 2px solid rgba(255,255,255,0.8);
+      outline-offset: 2px;
+    }
+
+    /* ── Slide nav dots ───────────────────────────────────────────── */
+    .fp-slides-nav {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      z-index: 10;
+    }
+    .fp-slides-nav__dot {
+      width: 8px; height: 8px;
+      padding: 0;
+      background: rgba(255,255,255,0.4);
+      border: 1.5px solid rgba(255,255,255,0.7);
+      border-radius: 50%;
+      cursor: pointer;
+      position: relative;
+      transition: background-color 250ms, transform 250ms;
+    }
+    .fp-slides-nav__dot::before {
+      content: ''; position: absolute; inset: -8px; border-radius: 50%;
+    }
+    .fp-slides-nav__dot--active {
+      background: #fff;
+      transform: scale(1.25);
+    }
+
+    /* ── Skip link ────────────────────────────────────────────────── */
+    .fp-skip-link {
+      position: fixed;
+      top: -100%; left: 16px;
+      z-index: 999;
+      padding: 8px 16px;
+      background: #000; color: #fff;
+      font-size: 14px;
+      text-decoration: none;
+      border-radius: 0 0 4px 4px;
+      transition: top 0.2s ease;
+    }
+    .fp-skip-link:focus { top: 0; }
+
+    /* ── SR-only ──────────────────────────────────────────────────── */
+    .fp-sr-only {
+      position: absolute; width: 1px; height: 1px;
+      padding: 0; margin: -1px; overflow: hidden;
+      clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
+
+    /* ── Animations (GPU-only) ────────────────────────────────────── */
+    [data-fp-animate] {
+      opacity: 0;
+      transform: translateY(24px);
+      transition:
+        opacity  700ms cubic-bezier(0.645, 0.045, 0.355, 1),
+        transform 700ms cubic-bezier(0.645, 0.045, 0.355, 1);
+      transition-delay: var(--fp-delay, 0ms);
+    }
+    .fp-section.fp-active [data-fp-animate] {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      [data-fp-animate] {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+      }
+    }
+
+    /* ── Section-specific styles ──────────────────────────────────── */
+    .section--hero {
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: #fff;
+    }
+    .section--about {
+      background: linear-gradient(160deg, #1a1a2e, #16213e);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+    }
+    .section--slides-demo {
+      background: #0d0d0d;
+    }
+    .section--scroll-demo {
+      background: linear-gradient(160deg, #0f2027, #203a43, #2c5364);
+      color: #fff;
+    }
+    .section--contact {
+      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #1a1a2e;
+    }
+
+    h1, h2, h3 {
+      font-family: 'DM Serif Display', Georgia, serif;
+      font-weight: 400;
+      line-height: 1.15;
+    }
+    h1 { font-size: clamp(2.5rem, 6vw, 5rem); margin: 0 0 1rem; }
+    h2 { font-size: clamp(2rem, 4vw, 3.5rem); margin: 0 0 1rem; }
+    p  { font-size: clamp(1rem, 1.5vw, 1.2rem); line-height: 1.7; }
+
+    .hero-content { max-width: 800px; padding: 40px; }
+    .eyebrow {
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      opacity: 0.6;
+      margin-bottom: 1.5rem;
+    }
+    .hero-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 2rem;
+      padding: 14px 28px;
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 40px;
+      border: 1px solid rgba(255,255,255,0.3);
+      font-size: 0.9rem;
+      letter-spacing: 0.05em;
+      transition: background-color 250ms, border-color 250ms;
+      backdrop-filter: blur(8px);
+    }
+    .hero-cta:hover { background: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.6); }
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      max-width: 960px;
+      padding: 60px 40px;
+      align-items: center;
+    }
+    @media (max-width: 768px) {
+      .about-grid { grid-template-columns: 1fr; gap: 32px; padding: 40px 24px; }
+    }
+
+    .feature-list {
+      list-style: none;
+      padding: 0;
+      margin: 1.5rem 0 0;
+    }
+    .feature-list li {
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      font-size: 0.9rem;
+      opacity: 0.8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .feature-list li::before {
+      content: '→';
+      opacity: 0.5;
+    }
+
+    .slide-content {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      color: #fff;
+    }
+    .slide-content .inner { max-width: 600px; padding: 40px; }
+
+    .slide-1 { background: linear-gradient(135deg, #667eea, #764ba2); }
+    .slide-2 { background: linear-gradient(135deg, #f093fb, #f5576c); }
+    .slide-3 { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+
+    /* ── Overflow section ─────────────────────────────────────────── */
+    .fp-overflow {
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .overflow-content {
+      padding: 80px 40px;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    .overflow-content p { margin-bottom: 1.5em; }
+
+    /* ── Contact section ──────────────────────────────────────────── */
+    .contact-content { max-width: 600px; padding: 40px; text-align: center; }
+    .contact-links {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-top: 2rem;
+      flex-wrap: wrap;
+    }
+    .contact-link {
+      padding: 12px 24px;
+      background: #1a1a2e;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 40px;
+      font-size: 0.9rem;
+      transition: background-color 200ms;
+    }
+    .contact-link:hover { background: #302b63; }
+  </style>
+</head>
+
+<body>
+
+<!--
+  ══════════════════════════════════════════════════════════
+  FULLPAGE ENGINE — DEMO
+  ══════════════════════════════════════════════════════════
+
+  SEMANTIC HTML NOTES:
+  - Real <section> elements for SEO + accessibility
+  - Proper heading hierarchy
+  - ARIA roles handled by the engine
+  - Content fully visible in DOM (no fake containers)
+  ══════════════════════════════════════════════════════════
+-->
+
+<!-- Skip link (injected by accessibility module) -->
+
+<!--
+  The wrapper must:
+  1. Have the .fp-wrapper class (or be targeted by selector)
+  2. Contain direct .fp-section children
+  3. data-fp-auto enables auto-initialization
+  4. data-fp-config passes JSON options
+-->
+<div
+  id="fullpage"
+  class="fp-wrapper"
+  data-fp-config='{"navigation":true,"progressBar":true,"loop":false,"recordHistory":true}'
+  role="main"
+>
+
+  <!-- ── Section 1: Hero ─────────────────────────────────────────── -->
+  <section
+    class="fp-section section--hero"
+    data-fp-anchor="home"
+    id="home"
+    aria-label="Hero — FullPage Engine"
+  >
+    <div class="hero-content">
+      <p class="eyebrow" data-fp-animate style="--fp-delay: 0ms">
+        Performance · Accessibility · Scale
+      </p>
+      <h1 data-fp-animate style="--fp-delay: 100ms">
+        FullPage Engine
+      </h1>
+      <p data-fp-animate style="--fp-delay: 200ms">
+        A lightweight, accessibility-first fullpage scrolling library
+        built on CSS Scroll Snap and native browser APIs.
+        No dependencies. No scroll hijacking.
+      </p>
+      <a
+        href="#about"
+        class="hero-cta"
+        data-fp-animate
+        style="--fp-delay: 350ms"
+        aria-label="Scroll to About section"
+      >
+        Explore ↓
+      </a>
+    </div>
+  </section>
+
+  <!-- ── Section 2: About ────────────────────────────────────────── -->
+  <section
+    class="fp-section section--about"
+    data-fp-anchor="about"
+    id="about"
+    aria-label="About"
+  >
+    <div class="about-grid">
+      <div>
+        <p class="eyebrow" data-fp-animate style="--fp-delay: 0ms">
+          Philosophy
+        </p>
+        <h2 data-fp-animate style="--fp-delay: 80ms">
+          Built for<br><em>the modern web</em>
+        </h2>
+        <p data-fp-animate style="--fp-delay: 160ms">
+          Every decision optimizes for Lighthouse scores, INP, CLS, and LCP.
+          CSS Scroll Snap handles positioning — no JavaScript position hacks.
+        </p>
+      </div>
+      <div data-fp-animate style="--fp-delay: 100ms">
+        <ul class="feature-list" aria-label="Key features">
+          <li>CSS Scroll Snap (no scroll hijacking)</li>
+          <li>IntersectionObserver active detection</li>
+          <li>ResizeObserver responsive behavior</li>
+          <li>Passive event listeners throughout</li>
+          <li>Prefers-reduced-motion support</li>
+          <li>Full keyboard &amp; screen reader support</li>
+          <li>AEM author-mode safe</li>
+          <li>Zero external dependencies</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Section 3: Horizontal Slides ───────────────────────────── -->
+  <section
+    class="fp-section section--slides-demo"
+    data-fp-anchor="slides"
+    id="slides"
+    aria-label="Horizontal slides demo"
+  >
+    <!-- Slides are direct children with .fp-slide -->
+    <div class="fp-slides">
+      <article class="fp-slide slide-1" data-fp-anchor="slide-1" aria-label="Slide 1 of 3">
+        <div class="slide-content">
+          <div class="inner">
+            <h2 data-fp-animate>Horizontal Slides</h2>
+            <p data-fp-animate style="--fp-delay:100ms">
+              Navigate with arrow keys, swipe, or the slide dots below.
+              CSS scroll snap handles the snapping — buttery smooth.
+            </p>
+          </div>
+        </div>
+      </article>
+
+      <article class="fp-slide slide-2" data-fp-anchor="slide-2" aria-label="Slide 2 of 3">
+        <div class="slide-content">
+          <div class="inner">
+            <h2 data-fp-animate>GPU-Safe Animations</h2>
+            <p data-fp-animate style="--fp-delay:100ms">
+              Only <code>transform</code> and <code>opacity</code> are animated.
+              No layout triggers. No paint storms.
+              Runs at 60fps on low-end Android.
+            </p>
+          </div>
+        </div>
+      </article>
+
+      <article class="fp-slide slide-3" data-fp-anchor="slide-3" aria-label="Slide 3 of 3">
+        <div class="slide-content">
+          <div class="inner">
+            <h2 data-fp-animate>Accessible by Design</h2>
+            <p data-fp-animate style="--fp-delay:100ms">
+              Arrow key navigation, ARIA current states,
+              focus management, and live region announcements
+              for screen readers.
+            </p>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ── Section 4: Overflow / Scrollable ─────────────────────────── -->
+  <section
+    class="fp-section section--scroll-demo fp-overflow fp-scrollable"
+    data-fp-anchor="long-content"
+    data-fp-overflow
+    id="long-content"
+    aria-label="Long content section"
+    tabindex="0"
+  >
+    <div class="overflow-content">
+      <p class="eyebrow" data-fp-animate>Overflow Section</p>
+      <h2 data-fp-animate style="--fp-delay:80ms">
+        Natural Scroll Within a Section
+      </h2>
+      <p data-fp-animate style="--fp-delay:160ms">
+        This section has more content than the viewport height.
+        It scrolls naturally within its snap point — you scroll
+        its content first, then the engine moves to the next section.
+      </p>
+      <p data-fp-animate style="--fp-delay:200ms">
+        This pattern is essential for content-rich pages where
+        forcing everything into 100vh panels isn't practical.
+        The <code>data-fp-overflow</code> attribute activates this behavior.
+      </p>
+      <p>
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque
+        euismod, nisl vel ultricies lacinia, nisl nisl aliquam nisl, nec aliquam
+        nisl nisl sit amet nisl. Pellentesque euismod, nisl vel ultricies lacinia.
+      </p>
+      <p>
+        Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere
+        cubilia curae; Donec velit neque, auctor sit amet aliquam vel, ullamcorper
+        sit amet ligula. Curabitur non nulla sit amet nisl tempus convallis quis.
+      </p>
+      <p>
+        Cras ultricies ligula sed magna dictum porta. Proin eget tortor risus.
+        Nulla porttitor accumsan tincidunt. Nulla quis lorem ut libero malesuada
+        feugiat. Curabitur arcu erat, accumsan id imperdiet et, porttitor at sem.
+      </p>
+      <p>
+        Sed porttitor lectus nibh. Vivamus magna. Fusce eu felis eget sapien
+        dignissim congue. Donec rutrum congue leo eget malesuada. Pellentesque
+        in ipsum id orci porta dapibus. Cras ultricies ligula sed magna dictum.
+      </p>
+    </div>
+  </section>
+
+  <!-- ── Section 5: Contact ──────────────────────────────────────── -->
+  <section
+    class="fp-section section--contact"
+    data-fp-anchor="contact"
+    id="contact"
+    aria-label="Contact"
+  >
+    <div class="contact-content">
+      <p class="eyebrow" data-fp-animate style="color: #1a1a2e; opacity: 0.5">
+        Get in touch
+      </p>
+      <h2 data-fp-animate style="--fp-delay: 80ms">
+        Let's build something<br><em>remarkable</em>
+      </h2>
+      <p data-fp-animate style="--fp-delay: 160ms; color: #444">
+        FullPage Engine is open-source, production-ready,
+        and built to outlast trends.
+      </p>
+      <nav class="contact-links" data-fp-animate style="--fp-delay: 240ms" aria-label="External links">
+        <a href="https://github.com" class="contact-link" target="_blank" rel="noopener">
+          GitHub
+        </a>
+        <a href="#home" class="contact-link" onclick="event.preventDefault(); window.__fp?.moveTo(0)">
+          Back to top ↑
+        </a>
+      </nav>
+    </div>
+  </section>
+
+</div><!-- /.fp-wrapper -->
+
+
+<!--
+  ════════════════════════════════════════════
+  SCRIPTS (deferred — non render-blocking)
+  ════════════════════════════════════════════
+-->
+
+<script type="module">
+  /**
+   * Manual initialization (alternative to data-fp-auto)
+   * Full config with all options demonstrated.
+   */
+  import { FullPageEngine } from './js/init.js';
+
+  const fp = new FullPageEngine('#fullpage', {
+    // Navigation
+    navigation:          true,
+    navigationPosition:  'right',
+    navigationTooltips:  ['Home', 'About', 'Slides', 'Long Content', 'Contact'],
+
+    // Behavior
+    loop:                false,
+    loopSlides:          false,
+    autoScrolling:       true,
+    scrollingSpeed:      700,
+    keyboardScrolling:   true,
+
+    // Features
+    lazyLoading:         true,
+    progressBar:         true,
+    recordHistory:       true,
+    animateAnchor:       true,
+
+    // Mobile responsiveness
+    responsiveWidth:     0,
+    responsiveHeight:    0,
+
+    // Slides autoplay (disabled — demo purposes)
+    autoplay:            false,
+    autoplayInterval:    4000,
+
+    // ── Callbacks ─────────────────────────────────────────────────
+
+    onInit(instance) {
+      console.info('[FP] Initialized', instance);
+      // Expose globally for contact button
+      window.__fp = instance;
+    },
+
+    beforeLeave(origin, dest, direction) {
+      console.debug('[FP] Leaving', origin?.id, '→', dest?.id);
+      // Return false to cancel navigation
+      return true;
+    },
+
+    afterLoad(section, index) {
+      console.debug('[FP] Loaded section', index, section?.id);
+    },
+
+    onLeave(origin, dest, index) {
+      // Analytics hook example
+      if (typeof gtag !== 'undefined') {
+        gtag('event', 'section_view', { section_id: dest?.id });
+      }
+    },
+  });
+
+  // ── Custom event listener (DOM-level) ─────────────────────────────────────
+  document.getElementById('fullpage').addEventListener('fp:afterLoad', (e) => {
+    console.debug('[CustomEvent] fp:afterLoad', e.detail);
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,22 @@
+// ─── FullPage Engine — Main SCSS Entry Point ─────────────────────────────────
+// fullpage/scss/fullpage.scss
+//
+// Import order matters:
+//   1. Variables (tokens)
+//   2. Reset (base)
+//   3. Components (layout, nav, slides)
+//   4. Utilities (helpers, animations)
+
+// ─── 1. Tokens ────────────────────────────────────────────────────────────────
+@use 'base/variables' as *;
+
+// ─── 2. Base ──────────────────────────────────────────────────────────────────
+@use 'base/reset';
+
+// ─── 3. Components ────────────────────────────────────────────────────────────
+@use 'components/layout';
+@use 'components/navigation';
+@use 'components/slides';
+
+// ─── 4. Utilities ─────────────────────────────────────────────────────────────
+@use 'utilities/utilities';

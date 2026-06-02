@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FullPage Engine — Callbacks & events</title>
+  <link rel="stylesheet" href="../dist/fullpage-engine.css">
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; }
+    .section { display: flex; align-items: center; justify-content: center; text-align: center; }
+    .s1 { background: #0f172a; color: #fff; }
+    .s2 { background: #1e293b; color: #fff; }
+    .s3 { background: #7C3AED; color: #fff; }
+    .s4 { background: #EC4899; color: #fff; }
+
+    /* Status overlay for this demo */
+    #status {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.8);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 40px;
+      font-size: 13px;
+      z-index: 999;
+      transition: opacity 200ms;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+
+<div id="status">Initialising…</div>
+
+<div id="fp">
+  <section class="fp-section section s1" id="home"    data-fp-anchor="home">    <h1>Home</h1></section>
+  <section class="fp-section section s2" id="about"   data-fp-anchor="about">   <h2>About</h2></section>
+  <section class="fp-section section s3" id="pricing" data-fp-anchor="pricing"> <h2>Pricing</h2></section>
+
+  <!--
+    This section is "gated" — beforeLeave will block navigation INTO it
+    unless a flag is set. Remove the gate by clicking the button.
+  -->
+  <section class="fp-section section s4" id="contact" data-fp-anchor="contact">
+    <div>
+      <h2>Contact (gated)</h2>
+      <p style="opacity:0.75;margin-top:0.5rem">This section required confirmation to enter</p>
+    </div>
+  </section>
+</div>
+
+<script type="module">
+  import { FullPageEngine, EVENTS } from '../js/init.js';
+
+  const status  = document.getElementById('status');
+  let   allowed = false;  // gate flag for the contact section
+
+  function show(msg) {
+    status.style.opacity = '1';
+    status.textContent   = msg;
+    clearTimeout(status._t);
+    status._t = setTimeout(() => status.style.opacity = '0', 2000);
+  }
+
+  const fp = new FullPageEngine('#fp', {
+    navigation: true,
+    progressBar: true,
+    loop: true,
+
+    // ── onInit ──────────────────────────────────────────────────────────────
+    onInit(instance) {
+      show('✓ Engine ready');
+      window.__fp = instance; // expose for console play
+    },
+
+    // ── beforeLeave ─────────────────────────────────────────────────────────
+    // Return false to CANCEL the navigation
+    beforeLeave(origin, dest, direction) {
+      if (dest.id === 'contact' && !allowed) {
+        show('⛔ Blocked — confirm first (set allowed = true in console)');
+        return false; // cancel
+      }
+      return true;
+    },
+
+    // ── onLeave ─────────────────────────────────────────────────────────────
+    onLeave(origin, dest, destIndex) {
+      show(`→ Leaving #${origin.id} → #${dest.id}`);
+    },
+
+    // ── afterLoad ───────────────────────────────────────────────────────────
+    afterLoad(section, index) {
+      show(`✓ Arrived at #${section.id} (${index})`);
+
+      // Simulated analytics
+      console.info('[Analytics] section_view', {
+        section_id:    section.id,
+        section_index: index,
+        timestamp:     Date.now(),
+      });
+    },
+  });
+
+  // ── DOM-level event listener (no instance reference needed) ───────────────
+  document.getElementById('fp').addEventListener('fp:afterLoad', e => {
+    console.debug('[CustomEvent] fp:afterLoad', e.detail);
+  });
+
+  // ── DOM-level CANCELLABLE beforeLeave ────────────────────────────────────
+  document.getElementById('fp').addEventListener('fp:beforeLeave', e => {
+    // Same gate logic but at DOM level
+    // (Both the callback AND this event fire — first false wins)
+  });
+
+  // ── Allow access to contact section from console ─────────────────────────
+  window.unlockContact = () => {
+    allowed = true;
+    show('✓ Contact section unlocked — scroll down');
+  };
+  show('Tip: run unlockContact() in console to unlock section 4');
+</script>
+
+</body>
+</html>

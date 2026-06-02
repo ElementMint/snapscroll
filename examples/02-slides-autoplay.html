@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FullPage Engine — Horizontal slides</title>
+  <link rel="stylesheet" href="../dist/fullpage-engine.css">
+  <style>
+    body  { margin: 0; font-family: system-ui, sans-serif; }
+    .s1   { background: #0f172a; color: #fff; }
+    .s2   { background: #1e293b; color: #fff; }
+    .sl-a { background: linear-gradient(135deg,#7C3AED,#4F46E5); color:#fff; }
+    .sl-b { background: linear-gradient(135deg,#EC4899,#F59E0B); color:#fff; }
+    .sl-c { background: linear-gradient(135deg,#10B981,#3B82F6); color:#fff; }
+    .center { display:flex; align-items:center; justify-content:center; text-align:center; }
+    h1,h2 { font-size: 2rem; }
+    p     { opacity: 0.75; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+
+<div id="fp">
+
+  <!-- Regular section with no slides -->
+  <section class="fp-section s1 center" data-fp-anchor="intro">
+    <div>
+      <h1>Vertical sections</h1>
+      <p>Scroll down to see horizontal slides ↓</p>
+    </div>
+  </section>
+
+  <!--
+    Section with three horizontal slides.
+    Add .fp-slide children — the engine wraps them in .fp-slides automatically.
+    Use data-fp-anchor on each slide for deep-link support.
+  -->
+  <section class="fp-section" data-fp-anchor="work">
+
+    <article class="fp-slide sl-a center" data-fp-anchor="branding">
+      <div><h2>Branding</h2><p>Slide 1 of 3 — swipe or use arrow keys</p></div>
+    </article>
+
+    <article class="fp-slide sl-b center" data-fp-anchor="motion">
+      <div><h2>Motion</h2><p>Slide 2 of 3</p></div>
+    </article>
+
+    <article class="fp-slide sl-c center" data-fp-anchor="dev">
+      <div><h2>Development</h2><p>Slide 3 of 3</p></div>
+    </article>
+
+  </section>
+
+  <!-- Another regular section after the slides -->
+  <section class="fp-section s2 center" data-fp-anchor="contact">
+    <div>
+      <h2>Contact</h2>
+      <p>Reached by scrolling past the slides ↑</p>
+    </div>
+  </section>
+
+</div>
+
+<script type="module">
+  import { FullPageEngine } from '../js/init.js';
+
+  new FullPageEngine('#fp', {
+    navigation: true,
+    progressBar: true,
+    loop: false,
+
+    // Autoplay the horizontal slides
+    autoplay:         true,
+    autoplayInterval: 3000,
+    loopSlides:       true,
+
+    afterSlideLoad(section, slideIndex) {
+      console.log('Slide loaded:', slideIndex, 'in', section.id);
+    },
+  });
+</script>
+
+</body>
+</html>

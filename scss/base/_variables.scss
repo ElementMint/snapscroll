@@ -1,0 +1,36 @@
+// ─── Design Tokens & Variables ───────────────────────────────────────────────
+// fullpage/scss/base/_variables.scss
+
+// Colors
+$fp-nav-dot-color:          rgba(255, 255, 255, 0.4)  !default;
+$fp-nav-dot-active-color:   rgba(255, 255, 255, 1.0)  !default;
+$fp-nav-dot-border:         rgba(255, 255, 255, 0.7)  !default;
+$fp-nav-dot-size:           10px                       !default;
+$fp-nav-dot-gap:            16px                       !default;
+$fp-nav-offset:             24px                       !default;
+
+$fp-arrow-color:            rgba(255, 255, 255, 0.8)  !default;
+$fp-arrow-hover-color:      rgba(255, 255, 255, 1.0)  !default;
+
+$fp-progress-height:        3px                        !default;
+$fp-progress-color:         #fff                       !default;
+$fp-progress-bg:            rgba(255,255,255,0.2)      !default;
+
+$fp-tooltip-bg:             rgba(0,0,0,0.7)            !default;
+$fp-tooltip-color:          #fff                       !default;
+$fp-tooltip-radius:         4px                        !default;
+$fp-tooltip-font-size:      12px                       !default;
+
+// Transitions
+$fp-transition-speed:       700ms                      !default;
+$fp-transition-easing:      cubic-bezier(0.645, 0.045, 0.355, 1.000) !default;
+$fp-fade-speed:             400ms                      !default;
+
+// Z-indices
+$fp-z-nav:                  100                        !default;
+$fp-z-progress:             200                        !default;
+$fp-z-skip-link:            999                        !default;
+
+// Breakpoints
+$fp-breakpoint-mobile:      768px                      !default;
+$fp-breakpoint-tablet:      1024px                     !default;

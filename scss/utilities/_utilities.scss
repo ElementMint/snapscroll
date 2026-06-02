@@ -1,0 +1,122 @@
+// ─── Utilities ───────────────────────────────────────────────────────────────
+// fullpage/scss/utilities/_utilities.scss
+
+@use '../base/variables' as *;
+
+// ─── Lazy loading states ──────────────────────────────────────────────────────
+.fp-lazy {
+  // Reserve space for images before load to prevent CLS
+  &[data-fp-lazy-src] {
+    display: block;
+    background: rgba(128,128,128,0.1);
+  }
+}
+
+img.fp-lazy {
+  display: block;
+  background: rgba(128,128,128,0.1);
+}
+
+.fp-lazy-loaded {
+  animation: fp-fade-in $fp-fade-speed ease forwards;
+}
+
+@keyframes fp-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+// ─── Section content animations ──────────────────────────────────────────────
+// Apply to children inside sections for reveal animations
+// Uses transform + opacity ONLY (GPU-safe, no layout)
+
+[data-fp-animate] {
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity  600ms $fp-transition-easing,
+    transform 600ms $fp-transition-easing;
+
+  // Stagger support via --fp-delay CSS var
+  transition-delay: var(--fp-delay, 0ms);
+}
+
+.fp-section.fp-active [data-fp-animate] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+// Horizontal slide-in variant
+[data-fp-animate="slide-left"] {
+  transform: translateX(-30px);
+}
+
+[data-fp-animate="slide-right"] {
+  transform: translateX(30px);
+}
+
+[data-fp-animate="scale"] {
+  transform: scale(0.95);
+}
+
+.fp-section.fp-active [data-fp-animate="slide-left"],
+.fp-section.fp-active [data-fp-animate="slide-right"],
+.fp-section.fp-active [data-fp-animate="scale"] {
+  transform: none;
+}
+
+// ─── Reduce motion: disable all fp animations ─────────────────────────────────
+@media (prefers-reduced-motion: reduce) {
+  [data-fp-animate] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    animation:  none !important;
+  }
+}
+
+// ─── Overflow / scrollable section ───────────────────────────────────────────
+.fp-scrollable {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+
+  @media (prefers-reduced-motion: reduce) {
+    scroll-behavior: auto;
+  }
+}
+
+// ─── AEM author mode: reset all fp behavior ──────────────────────────────────
+.fp-author-mode {
+  &.fp-wrapper {
+    scroll-snap-type: none;
+    height: auto;
+    overflow: visible;
+  }
+
+  .fp-section {
+    height: auto;
+    min-height: 0;
+    scroll-snap-align: none;
+    content-visibility: visible;
+    contain: none;
+    overflow: visible;
+  }
+
+  .fp-nav,
+  .fp-progress,
+  .fp-slide-arrow,
+  .fp-slides-nav {
+    display: none;
+  }
+}
+
+// ─── Focus styles ─────────────────────────────────────────────────────────────
+.fp-wrapper {
+  // Ensure focus rings are always visible inside the engine
+  :focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.8);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}

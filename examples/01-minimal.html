@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FullPage Engine — Minimal example</title>
+  <link rel="stylesheet" href="../dist/fullpage-engine.css">
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; }
+
+    /* Each section gets its own background */
+    #s1 { background: #0f172a; color: #fff; display: flex; align-items: center; justify-content: center; }
+    #s2 { background: #1e293b; color: #fff; display: flex; align-items: center; justify-content: center; }
+    #s3 { background: #0f172a; color: #fff; display: flex; align-items: center; justify-content: center; }
+
+    h1, h2 { font-size: 2.5rem; }
+  </style>
+</head>
+<body>
+
+<!--
+  Minimal setup:
+  1. One wrapper div
+  2. Sections with .fp-section class
+  3. data-fp-anchor for URL routing
+  4. data-fp-auto for zero-JS init (OR use JS below)
+-->
+<div id="fullpage" data-fp-auto data-fp-config='{"navigation":true}'>
+
+  <section class="fp-section" id="s1" data-fp-anchor="home">
+    <h1>Section 1</h1>
+  </section>
+
+  <section class="fp-section" id="s2" data-fp-anchor="about">
+    <h2>Section 2</h2>
+  </section>
+
+  <section class="fp-section" id="s3" data-fp-anchor="contact">
+    <h2>Section 3</h2>
+  </section>
+
+</div>
+
+<script type="module" src="../js/init.js"></script>
+
+</body>
+</html>
