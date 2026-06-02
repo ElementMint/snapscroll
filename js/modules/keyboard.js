@@ -38,8 +38,9 @@ export function createKeyboardHandler(callbacks) {
       target.tagName === 'TEXTAREA' ||
       target.tagName === 'SELECT' ||
       target.isContentEditable
-    )
+    ) {
       return;
+    }
 
     // Don't intercept when focus is inside an fp-overflow scrollable
     if (target.closest?.('.fp-overflow')) return;
