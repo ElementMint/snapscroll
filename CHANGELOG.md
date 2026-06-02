@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/ElementMint/snapscroll/compare/v1.0.1...v1.0.2) (2026-06-02)
+
+
+### Bug Fixes
+
+* restore addClass import in navigation.js and scope coverage to core/ ([df0531d](https://github.com/ElementMint/snapscroll/commit/df0531d6bcc3265d2f67d0cffe2f8b65f0f15da2))
+
 ## [1.0.1](https://github.com/ElementMint/snapscroll/compare/v1.0.0...v1.0.1) (2026-06-02)
 
 
