@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/ElementMint/snapscroll/compare/v1.0.2...v1.0.3) (2026-06-02)
+
+
+### Bug Fixes
+
+* drop Node 18 from CI matrix, bump engines to >=20 ([46f98a5](https://github.com/ElementMint/snapscroll/commit/46f98a51bc78801e5cf74b19715803fddecd0a0a))
+
 ## [1.0.2](https://github.com/ElementMint/snapscroll/compare/v1.0.1...v1.0.2) (2026-06-02)
 
 
