@@ -10,6 +10,9 @@
   height: 100%;
   overflow: hidden; // no native scroll — JS rAF drives the rail
   contain: layout paint;
+  // Re-enable horizontal swipe gestures for touch slide navigation.
+  // The wrapper has touch-action:none which would otherwise block all gestures.
+  touch-action: pan-x;
 }
 
 // ─── Slide rail — JS animates transform: translateX() on this ────────────────

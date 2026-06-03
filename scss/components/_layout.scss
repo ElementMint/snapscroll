@@ -24,16 +24,17 @@
   height: 100svh;
   width: 100%;
 
-  // Contain layout/paint outside the wrapper
   contain: layout style;
-
-  // Promote to its own compositor layer — the rail slides under it
   will-change: transform;
-
-  // Inherit html/body background so any gap during loop snap shows
-  // the page background rather than white. Set html { background: <color> }
-  // to match your first/last section and prevent flash.
   background: inherit;
+
+  // Tell the browser JS owns all touch gestures — prevents pull-to-refresh
+  // (Android Chrome) and elastic bounce (iOS Safari) from intercepting
+  // vertical swipes that should navigate between sections.
+  touch-action: none;
+
+  // Belt-and-suspenders: also block overscroll at the container level.
+  overscroll-behavior: none;
 }
 
 // ─── Rail (JS-animated) ──────────────────────────────────────────────────────
@@ -63,6 +64,9 @@
   &.fp-overflow {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    // Re-enable vertical touch scroll for the overflow content.
+    // touch-action: none on the wrapper would block this otherwise.
+    touch-action: pan-y;
   }
 
   // ─── Auto-height sections ─────────────────────────────────────────────

@@ -8,11 +8,18 @@
   box-sizing: inherit;
 }
 
+html,
+body {
+  // Prevent pull-to-refresh (Android Chrome) and rubber-band bounce (iOS Safari)
+  // when the user swipes down on section 0 or up on the last section.
+  // Without this the browser intercepts the touch gesture and reloads the page.
+  overscroll-behavior: none;
+}
+
 html {
   box-sizing: border-box;
   scroll-behavior: smooth;
 
-  // Respect system motion preference at root level
   @media (prefers-reduced-motion: reduce) {
     scroll-behavior: auto;
   }

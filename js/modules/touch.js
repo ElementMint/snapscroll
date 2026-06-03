@@ -54,8 +54,17 @@ export function createTouchHandler(el, callbacks, options = {}) {
   /**
    * @param {TouchEvent} e
    */
-  function onTouchMove(_e) {
+  function onTouchMove(e) {
     if (!isSwiping) return;
+    // Prevent the browser's pull-to-refresh and elastic overscroll from
+    // triggering during a vertical swipe. Without this Android Chrome fires
+    // PTR when the user swipes down on section 0 and iOS Safari bounces.
+    // touch-action:none on the wrapper is the primary guard; this is backup.
+    const t = e.touches[0];
+    const dx = Math.abs(t.clientX - startX);
+    const dy = Math.abs(t.clientY - startY);
+    // Only cancel if this looks like a vertical gesture (not a horizontal slide swipe)
+    if (dy > dx) e.preventDefault();
   }
 
   /**
@@ -106,15 +115,20 @@ export function createTouchHandler(el, callbacks, options = {}) {
     return { destroy: () => {} };
   }
 
+  // touchstart/end passive — no need to prevent default on these.
+  // touchmove NON-passive — we call preventDefault() to block pull-to-refresh
+  // and browser elastic bounce on vertical swipes.
+  const moveOpts = { passive: false };
+
   el.addEventListener('touchstart', onTouchStart, PASSIVE_OPTS);
-  el.addEventListener('touchmove', onTouchMove, PASSIVE_OPTS);
+  el.addEventListener('touchmove', onTouchMove, moveOpts);
   el.addEventListener('touchend', onTouchEnd, PASSIVE_OPTS);
   el.addEventListener('touchcancel', onTouchCancel, PASSIVE_OPTS);
 
   return {
     destroy() {
       el.removeEventListener('touchstart', onTouchStart, PASSIVE_OPTS);
-      el.removeEventListener('touchmove', onTouchMove, PASSIVE_OPTS);
+      el.removeEventListener('touchmove', onTouchMove, moveOpts);
       el.removeEventListener('touchend', onTouchEnd, PASSIVE_OPTS);
       el.removeEventListener('touchcancel', onTouchCancel, PASSIVE_OPTS);
     },
