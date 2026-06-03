@@ -42,27 +42,30 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ── Wrapper ──────────────────────────────────────────────────── */
+    /* ── Wrapper — clips the view, no native scroll ───────────────── */
     .fp-wrapper {
-      scroll-snap-type: y mandatory;
-      overflow-y: scroll;
-      overflow-x: hidden;
+      position: relative;
+      overflow: hidden;
       height: 100svh;
-      contain: layout style;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
+      width: 100%;
     }
-    .fp-wrapper::-webkit-scrollbar { display: none; }
+
+    /* ── Rail — JS animates transform: translateY() on this ───────── */
+    .fp-rail {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      will-change: transform;
+      transform: translateZ(0);
+      backface-visibility: hidden;
+    }
 
     /* ── Sections ─────────────────────────────────────────────────── */
     .fp-section {
-      scroll-snap-align: start;
-      scroll-snap-stop: always;
       height: 100svh;
       width: 100%;
       position: relative;
       overflow: hidden;
-      contain: layout paint;
     }
 
     /* ── Slides ───────────────────────────────────────────────────── */

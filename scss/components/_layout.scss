@@ -5,127 +5,71 @@
 
 // ─── CSS Custom Properties ───────────────────────────────────────────────────
 :root {
-  --fp-scroll-speed:      #{$fp-transition-speed};
-  --fp-scroll-ease:       #{$fp-transition-easing};
-  --fp-nav-dot-size:      #{$fp-nav-dot-size};
-  --fp-nav-offset:        #{$fp-nav-offset};
-  --fp-z-nav:             #{$fp-z-nav};
-  --fp-z-progress:        #{$fp-z-progress};
-  --fp-z-skip-link:       #{$fp-z-skip-link};
-  --fp-section-height:    100svh; // Small Viewport Height — correct on mobile
+  --fp-scroll-speed: #{$fp-transition-speed};
+  --fp-scroll-ease: #{$fp-transition-easing};
+  --fp-nav-dot-size: #{$fp-nav-dot-size};
+  --fp-nav-offset: #{$fp-nav-offset};
+  --fp-z-nav: #{$fp-z-nav};
+  --fp-z-progress: #{$fp-z-progress};
+  --fp-z-skip-link: #{$fp-z-skip-link};
+  --fp-section-height: 100svh; // Small Viewport Height — correct on mobile
 }
 
 // ─── Wrapper ─────────────────────────────────────────────────────────────────
+// The wrapper clips the view — overflow hidden, no native scroll.
+// All scrolling is driven by JS via transform on the fp-rail.
 .fp-wrapper {
-  // CSS scroll snap — the core scroll mechanism.
-  // No JS position manipulation needed.
-  scroll-snap-type: y mandatory;
-  overflow-y: scroll;
-  overflow-x: hidden;
+  position: relative;
+  overflow: hidden;
   height: 100svh;
+  width: 100%;
 
-  // Contain layout/paint/style for performance
-  // Avoids expensive layout recalculations outside this element
+  // Contain layout/paint outside the wrapper
   contain: layout style;
 
-  // Momentum scrolling on iOS
-  -webkit-overflow-scrolling: touch;
+  // Promote to its own compositor layer — the rail slides under it
+  will-change: transform;
+}
 
-  // GPU compositing layer only when needed
-  // (avoid: will-change: transform — too broad)
-
-  // Scrollbar behavior
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.3) transparent;
-
-  &::-webkit-scrollbar {
-    width: 4px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.3);
-    border-radius: 2px;
-  }
-
-  // Hide scrollbar when scrollBar: false (default)
-  &:not(.fp-scroll-bar) {
-    scrollbar-width: none;
-
-    &::-webkit-scrollbar {
-      display: none;
-    }
-  }
-
-  // ─── Responsive mode: disable snap ─────────────────────────────────────
-  &.fp-responsive {
-    scroll-snap-type: none;
-    height: auto;
-    overflow-y: auto;
-
-    .fp-section {
-      height: auto;
-      min-height: 50vh;
-      scroll-snap-align: none;
-    }
-  }
+// ─── Rail (JS-animated) ──────────────────────────────────────────────────────
+// Holds all sections stacked vertically. JS sets transform: translateY()
+// via a rAF loop with custom easing — this is what moves sections.
+.fp-rail {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  // Height is set to totalSections * 100svh in JS
+  will-change: transform;
+  // Hardware-accelerated, sub-pixel rendering
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 // ─── Section ─────────────────────────────────────────────────────────────────
 .fp-section {
-  // Snap alignment
-  scroll-snap-align: start;
-  scroll-snap-stop: always; // Prevent skipping sections
-
-  // Full viewport height — use svh for mobile correctness
   height: 100svh;
   width: 100%;
-
-  // Reserve layout space to prevent CLS
-  min-height: var(--fp-section-height, 100svh);
-
-  // Contain painting within each section
-  contain: layout paint;
-
-  // Content visibility for off-screen sections
-  // Dramatically improves rendering performance
-  content-visibility: auto;
-  contain-intrinsic-size: auto 100svh;
-
   position: relative;
+  // No overflow hidden by default — each section clips its own content
   overflow: hidden;
-
-  // GPU-safe: only promote if needed (done via JS for active section)
-  // Avoid blanket will-change here
-
-  // ─── Auto-height sections ─────────────────────────────────────────────
-  &[data-fp-auto-height] {
-    height: auto;
-    min-height: 100svh;
-    scroll-snap-align: start;
-  }
 
   // ─── Overflow / scrollable sections ─────────────────────────────────
   &.fp-overflow {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    scroll-snap-align: start;
+  }
 
-    // Only snap to this section after scrolling its full content
-    // This is handled in JS by checking scroll position
+  // ─── Auto-height sections ─────────────────────────────────────────────
+  &[data-fp-auto-height] {
+    height: auto;
+    min-height: 100svh;
   }
 
   // ─── Active section ───────────────────────────────────────────────────
   &.fp-active {
-    // Promote active section to its own compositor layer
-    // This is safe because only ONE section is active at a time
-    will-change: contents;
-
-    // Ensure content is painted (override content-visibility)
-    content-visibility: visible;
+    // No special treatment needed — section is always fully painted
+    // since content-visibility: auto is removed (caused Safari blank screen)
   }
 
   // ─── Leaving animation ────────────────────────────────────────────────
@@ -134,30 +78,43 @@
   }
 }
 
-// ─── Reduced Motion ──────────────────────────────────────────────────────────
-// Applied to :root by the accessibility module
-.fp-reduced-motion,
-:root.fp-reduced-motion {
-  .fp-section,
-  .fp-slide,
-  .fp-wrapper {
-    transition: none !important;
-    animation:  none !important;
-    scroll-behavior: auto !important;
+// ─── Responsive mode ─────────────────────────────────────────────────────────
+.fp-wrapper.fp-responsive {
+  overflow-y: auto;
+  height: auto;
+
+  .fp-rail {
+    position: static;
+    transform: none !important;
+    will-change: auto;
   }
 
-  .fp-wrapper {
-    scroll-snap-type: y mandatory;
+  .fp-section {
+    height: auto;
+    min-height: 50vh;
+  }
+}
+
+// ─── Reduced Motion ──────────────────────────────────────────────────────────
+.fp-reduced-motion,
+:root.fp-reduced-motion {
+  .fp-rail {
+    transition: none !important;
+  }
+
+  .fp-section {
+    transition: none !important;
+    animation: none !important;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .fp-wrapper {
-    scroll-snap-type: y mandatory;
+  .fp-rail {
+    transition: none !important;
   }
 
   .fp-section {
     transition: none;
-    animation:  none;
+    animation: none;
   }
 }

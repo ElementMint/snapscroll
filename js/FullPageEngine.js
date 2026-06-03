@@ -11,8 +11,8 @@
 import { DEFAULT_CONFIG, mergeConfig, parseDataConfig } from './core/config.js';
 import { createState } from './core/state.js';
 import { createEventBus } from './core/events.js';
-import { CLASSES, ATTRS, EVENTS, DIRECTION } from './core/constants.js';
-import { $$, addClass, removeClass } from './utils/dom.js';
+import { CLASSES, ATTRS, EVENTS, DIRECTION, RAIL_CLASS } from './core/constants.js';
+import { $$, addClass, removeClass, createElement } from './utils/dom.js';
 import { isAEMAuthorMode, prefersReducedMotion } from './utils/performance.js';
 import { setHash, getHash, parseAnchor, normalizeAnchor } from './utils/url.js';
 import { createTouchHandler } from './modules/touch.js';
@@ -22,11 +22,7 @@ import { createNavigation, createProgressBar } from './modules/navigation.js';
 import { initSectionSlides } from './modules/slides.js';
 import { createLazyLoader } from './modules/lazyload.js';
 import { createA11yModule, manageFocusOnSection } from './accessibility/accessibility.js';
-import {
-  createSectionObserver,
-  createResizeObserver,
-  createMutationObserver,
-} from './observers/observers.js';
+import { createResizeObserver, createMutationObserver } from './observers/observers.js';
 import { createPluginSystem } from './modules/plugins.js';
 
 /**
@@ -66,11 +62,10 @@ export class FullPageEngine {
     this._resizeObserver = null;
     this._mutationObserver = null;
     this._slidesMap = new Map(); // sectionIndex → slides module
-    this._cleanups = []; // array of cleanup functions
-    this._programmaticNav = false; // true while a JS-driven scroll is in flight
-    this._navTarget = -1; // intended destination during programmatic nav
-    this._navGuardTimer = null; // timer ID for the programmatic nav guard
-    this._pendingNav = null; // queued nav request during active scroll
+    this._cleanups = []; // cleanup functions
+    this._rafId = null; // active rAF animation id
+    this._currentY = 0; // current rail translateY in px
+    this._pendingNav = null; // nav queued during active scroll
     this._overflowLockUntil = 0; // timestamp until overflow inertia is blocked
 
     this._init();
@@ -139,16 +134,19 @@ export class FullPageEngine {
 
   _setupContainer() {
     addClass(this._container, CLASSES.WRAPPER);
+
+    // Create the rail — a single div that all sections live in.
+    // JS animates its transform to scroll between sections.
+    this._rail = createElement('div', { class: RAIL_CLASS });
+    this._container.appendChild(this._rail);
   }
 
   _setupSections() {
     this._sections.forEach((section, i) => {
-      // Ensure section class
       if (!section.classList.contains(CLASSES.SECTION)) {
         addClass(section, CLASSES.SECTION);
       }
 
-      // Set anchor ID
       const anchor = this._config.anchors[i]
         ? normalizeAnchor(this._config.anchors[i])
         : section.getAttribute(ATTRS.ANCHOR) || normalizeAnchor(section.id) || `section-${i + 1}`;
@@ -156,17 +154,19 @@ export class FullPageEngine {
       section.setAttribute(ATTRS.ANCHOR, anchor);
       if (!section.id) section.id = anchor;
 
-      // Mark overflow/scrollable sections
       if (section.hasAttribute(ATTRS.OVERFLOW)) {
         addClass(section, CLASSES.OVERFLOW, CLASSES.SCROLLABLE);
         section.setAttribute('tabindex', '0');
       }
 
-      // Activate first section
-      if (i === 0) {
-        addClass(section, CLASSES.ACTIVE);
-      }
+      // Move section into the rail
+      this._rail.appendChild(section);
+
+      if (i === 0) addClass(section, CLASSES.ACTIVE);
     });
+
+    // Rail height = total sections stacked
+    this._rail.style.height = `${this._sections.length * 100}svh`;
 
     this._state.set('activeSection', 0);
   }
@@ -339,19 +339,10 @@ export class FullPageEngine {
   // ─── Observers ─────────────────────────────────────────────────────────────
 
   _setupObservers() {
-    // Active section detection — only act on native (user-driven) scroll.
-    // During programmatic nav, suppress IO entirely so intermediate sections
-    // (passed through during smooth scroll) don't flip the active state.
-    // If the IO reports the exact nav target while _programmaticNav is still
-    // true (rare timing), accept it as a no-op since state is already correct.
-    this._sectionObserver = createSectionObserver(this._sections, activeIndex => {
-      if (this._programmaticNav) return;
-      if (activeIndex !== this._state.get('activeSection')) {
-        this._activateSection(activeIndex);
-      }
-    });
+    // Section position is fully owned by the rAF animation engine —
+    // no IntersectionObserver needed for active-section detection.
 
-    // Resize → responsive check
+    // Resize → recalculate rail position so sections stay aligned
     this._resizeObserver = createResizeObserver(this._container, ({ width, height }) =>
       this._onResize(width, height)
     );
@@ -360,7 +351,6 @@ export class FullPageEngine {
     this._mutationObserver = createMutationObserver(this._container, () => this._onDOMChange());
 
     this._cleanups.push(
-      () => this._sectionObserver?.destroy(),
       () => this._resizeObserver?.destroy(),
       () => this._mutationObserver?.destroy()
     );
@@ -438,9 +428,13 @@ export class FullPageEngine {
 
   // ─── Internal scroll logic ─────────────────────────────────────────────────
 
+  // Easing function: ease-in-out cubic — smooth acceleration and deceleration.
+  // t = normalized time 0..1, returns eased value 0..1.
+  _ease(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  }
+
   _scrollToSection(index, animate = true) {
-    // If mid-scroll, queue this request — it fires once the current scroll settles.
-    // Only keep the most recent pending request (last wins).
     if (this._state.get('isScrolling')) {
       this._pendingNav = { index, animate };
       return;
@@ -450,13 +444,13 @@ export class FullPageEngine {
     if (
       index === this._state.get('activeSection') &&
       this._sections[index].classList.contains(CLASSES.ACTIVE)
-    )
+    ) {
       return;
+    }
 
     const prev = this._state.get('activeSection');
     const section = this._sections[index];
 
-    // Lifecycle: beforeLeave
     const continueNav = this._bus.emit(EVENTS.BEFORE_LEAVE, {
       origin: this._sections[prev],
       destination: section,
@@ -466,37 +460,26 @@ export class FullPageEngine {
     if (!continueNav) return;
 
     this._config.beforeLeave?.(this._sections[prev], section, DIRECTION.DOWN);
-    this._plugins.run('onLeave', {
-      section: this._sections[prev],
-      origin: prev,
-      dest: index,
-    });
+    this._plugins.run('onLeave', { section: this._sections[prev], origin: prev, dest: index });
 
-    // Cancel any previous scroll guard timer before starting a new one
-    if (this._navGuardTimer) {
-      clearTimeout(this._navGuardTimer);
-      this._navGuardTimer = null;
+    // Cancel any in-flight animation
+    if (this._rafId) {
+      cancelAnimationFrame(this._rafId);
+      this._rafId = null;
     }
 
     this._state.set('isScrolling', true);
-    this._programmaticNav = true;
-    this._navTarget = index;
-
-    // Update active state immediately — IO is suppressed during programmatic nav
     this._activateSection(index);
 
-    // Update URL
     if (this._config.recordHistory) {
       const anchor = section.getAttribute(ATTRS.ANCHOR);
       if (anchor) setHash(anchor, true);
     }
 
-    // Lazy load adjacent sections
     this._lazyLoader?.observe(section);
     if (this._sections[index + 1]) this._lazyLoader?.observe(this._sections[index + 1]);
     if (this._sections[index - 1]) this._lazyLoader?.observe(this._sections[index - 1]);
 
-    // Lifecycle: onLeave → afterLoad
     this._bus.emit(EVENTS.ON_LEAVE, {
       origin: this._sections[prev],
       dest: section,
@@ -504,53 +487,58 @@ export class FullPageEngine {
     });
     this._config.onLeave?.(this._sections[prev], section, index);
 
-    // Scroll by setting scrollTop on the wrapper directly.
-    // This is more reliable than scrollIntoView when navigating multiple sections:
-    // scrollIntoView can fight with CSS scroll-snap on the container, causing a
-    // visible snap-back flicker before the smooth animation wins.
-    // scrollTo on the container moves smoothly without snap interference.
-    const scrollBehavior = animate && !this._state.get('reducedMotion') ? 'smooth' : 'instant';
-    this._container.scrollTo({
-      top: section.offsetTop,
-      behavior: scrollBehavior,
-    });
+    const shouldAnimate = animate && !this._state.get('reducedMotion');
+    const duration = shouldAnimate ? this._config.scrollingSpeed : 0;
+    // Rail moves so index-th section sits at top of wrapper.
+    // translateY target = -(index * 100svh) — use px via offsetTop for accuracy.
+    const fromY = this._currentY ?? 0;
+    const toY = -(index * this._container.clientHeight);
 
-    // Keep _programmaticNav true for the full scroll animation so the IO
-    // cannot misfire on intermediate sections passed through during smooth scroll.
-    // Use scrollingSpeed * 1.5 as the guard window to cover CSS snap fights.
-    const speed = animate && !this._state.get('reducedMotion') ? this._config.scrollingSpeed : 0;
-    this._navGuardTimer = setTimeout(
-      () => {
-        this._navGuardTimer = null;
+    const onDone = () => {
+      this._rafId = null;
+      this._currentY = toY;
+      this._rail.style.transform = `translateY(${toY}px)`;
+      this._state.set('isScrolling', false);
 
-        // Resync active section to the intended target — guards against any
-        // CSS snap or stale IO callback that may have flipped it during transit.
-        if (this._state.get('activeSection') !== index) {
-          this._activateSection(index);
-        }
+      this._bus.emit(EVENTS.AFTER_LOAD, {
+        section,
+        index,
+        anchor: section.getAttribute(ATTRS.ANCHOR),
+      });
+      this._config.afterLoad?.(section, index);
+      this._plugins.run('onLoad', { section, index });
+      manageFocusOnSection(section);
 
-        this._state.set('isScrolling', false);
-        this._programmaticNav = false;
-        this._navTarget = -1;
+      if (this._pendingNav) {
+        const { index: pi, animate: pa } = this._pendingNav;
+        this._pendingNav = null;
+        this._scrollToSection(pi, pa);
+      }
+    };
 
-        this._bus.emit(EVENTS.AFTER_LOAD, {
-          section,
-          index,
-          anchor: section.getAttribute(ATTRS.ANCHOR),
-        });
-        this._config.afterLoad?.(section, index);
-        this._plugins.run('onLoad', { section, index });
-        manageFocusOnSection(section);
+    if (!shouldAnimate) {
+      onDone();
+      return;
+    }
 
-        // Execute any navigation request that arrived while we were scrolling
-        if (this._pendingNav) {
-          const { index: pi, animate: pa } = this._pendingNav;
-          this._pendingNav = null;
-          this._scrollToSection(pi, pa);
-        }
-      },
-      Math.max(speed * 1.5, speed + 200)
-    );
+    const startTime = performance.now();
+
+    const tick = now => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = this._ease(progress);
+      const y = fromY + (toY - fromY) * eased;
+
+      this._rail.style.transform = `translateY(${y}px)`;
+
+      if (progress < 1) {
+        this._rafId = requestAnimationFrame(tick);
+      } else {
+        onDone();
+      }
+    };
+
+    this._rafId = requestAnimationFrame(tick);
   }
 
   _activateSection(index) {
@@ -593,6 +581,12 @@ export class FullPageEngine {
       this._state.set('isResponsive', isResponsive);
       this._container.classList.toggle('fp-responsive', isResponsive);
     }
+
+    // Recalculate rail position — section heights are viewport-relative (100svh),
+    // so after a resize the active section must be repositioned instantly.
+    const idx = this._state.get('activeSection');
+    this._currentY = -(idx * this._container.clientHeight);
+    if (this._rail) this._rail.style.transform = `translateY(${this._currentY}px)`;
 
     this._bus.emit(EVENTS.RESIZE, { width, height, isResponsive });
     this._config.onResize?.({ width, height, isResponsive });
@@ -673,10 +667,10 @@ export class FullPageEngine {
   destroy(removeClasses = true) {
     if (this._state.get('destroyed')) return;
 
-    // Cancel any in-flight nav guard timer
-    if (this._navGuardTimer) {
-      clearTimeout(this._navGuardTimer);
-      this._navGuardTimer = null;
+    // Cancel any in-flight rAF scroll animation
+    if (this._rafId) {
+      cancelAnimationFrame(this._rafId);
+      this._rafId = null;
     }
 
     // Stop autoplay
@@ -698,6 +692,13 @@ export class FullPageEngine {
 
     if (removeClasses) {
       removeClass(this._container, CLASSES.WRAPPER, CLASSES.INITIALIZED);
+    }
+
+    // Move sections back out of the rail and remove the rail
+    if (this._rail) {
+      this._sections?.forEach(s => this._container.appendChild(s));
+      this._rail.remove();
+      this._rail = null;
     }
 
     this._state.set('destroyed', true);

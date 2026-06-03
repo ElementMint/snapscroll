@@ -1,14 +1,10 @@
 /**
  * @file wheel.js
  * @description Mouse wheel / trackpad scroll module.
- * Uses a NON-passive listener so we can call preventDefault() to stop
- * CSS scroll-snap from reacting to wheel events independently.
- * Without this, both CSS snap AND the JS scroll animation run simultaneously,
- * causing visible flicker as they fight over the scroll position.
- *
- * Exception: overflow sections (data-fp-overflow) handle their own vertical
- * scroll. We allow native scroll there until the content hits its limit,
- * then hand off to section navigation.
+ * The wrapper uses overflow:hidden + JS transform — no native scroll —
+ * so we use a passive listener and never need preventDefault().
+ * Overflow sections (data-fp-overflow) scroll naturally until their
+ * content limit, then hand off to section navigation.
  */
 
 import { WHEEL } from '../core/constants.js';
@@ -38,7 +34,7 @@ function getOverflowSection(target) {
 function overflowCanScroll(el, scrollingDown) {
   if (!el) return false;
   const { scrollTop, scrollHeight, clientHeight } = el;
-  const atTop    = scrollTop <= 0;
+  const atTop = scrollTop <= 0;
   const atBottom = scrollTop + clientHeight >= scrollHeight - 1; // 1px tolerance
   if (scrollingDown) return !atBottom;
   return !atTop;
@@ -57,26 +53,26 @@ function overflowCanScroll(el, scrollingDown) {
  */
 export function createWheelHandler(el, callbacks, options = {}) {
   const {
-    threshold         = WHEEL.DELTA_THRESHOLD,
-    cooldown          = WHEEL.COOLDOWN_MS,
-    isOverflowLocked  = () => false,
+    threshold = WHEEL.DELTA_THRESHOLD,
+    cooldown = WHEEL.COOLDOWN_MS,
+    isOverflowLocked = () => false,
   } = options;
 
-  let lastTriggerTime  = 0;
+  let lastTriggerTime = 0;
   let accumulatedDelta = 0;
-  let clearAccumTimer  = null;
+  let clearAccumTimer = null;
 
   function onWheel(e) {
-    const now    = performance.now();
+    const now = performance.now();
     const deltaY = e.deltaY;
     const deltaX = e.deltaX;
-    const absY   = Math.abs(deltaY);
-    const absX   = Math.abs(deltaX);
+    const absY = Math.abs(deltaY);
+    const absX = Math.abs(deltaX);
 
     // Ignore purely horizontal events — user is scrolling a slide container.
     if (absX > absY * 2 && absX > threshold) return;
 
-    const delta       = absY >= absX ? deltaY : deltaX;
+    const delta = absY >= absX ? deltaY : deltaX;
     const scrollingDown = delta > 0;
 
     // If the event originated inside an overflow section that still has
@@ -86,28 +82,22 @@ export function createWheelHandler(el, callbacks, options = {}) {
     // will fall through to section navigation below.
     const overflowEl = getOverflowSection(e.target);
     if (overflowEl && overflowCanScroll(overflowEl, scrollingDown)) {
-      // If we just landed on this overflow section (inertia lock active),
-      // block the overflow content from scrolling until the lock expires.
-      if (isOverflowLocked()) {
-        e.preventDefault();
-        return;
-      }
-      // Otherwise let the browser scroll the overflow content natively.
-      // Reset accumulator so the inertia tail doesn't also trigger section nav.
+      // Still within inertia lock after landing on an overflow section —
+      // swallow the event so momentum doesn't pre-scroll the content.
+      if (isOverflowLocked()) return;
+      // Content still has room to scroll — let the browser handle it natively,
+      // reset accumulator so the tail doesn't also trigger section nav.
       accumulatedDelta = 0;
-      lastTriggerTime  = now;
+      lastTriggerTime = now;
       return;
     }
-
-    // For all other cases: preventDefault blocks CSS scroll-snap from reacting
-    // to the wheel event directly. JS owns the scroll via container.scrollTo().
-    // Without this, CSS snap and JS both animate simultaneously → flicker.
-    e.preventDefault();
 
     // Accumulate delta for trackpad inertia burst detection
     accumulatedDelta += Math.abs(delta);
     if (clearAccumTimer) clearTimeout(clearAccumTimer);
-    clearAccumTimer = setTimeout(() => { accumulatedDelta = 0; }, 200);
+    clearAccumTimer = setTimeout(() => {
+      accumulatedDelta = 0;
+    }, 200);
 
     // Enforce cooldown between navigations
     if (now - lastTriggerTime < cooldown) return;
@@ -118,7 +108,7 @@ export function createWheelHandler(el, callbacks, options = {}) {
     // Require a burst of accumulated movement (prevents single-tick accidentals)
     if (accumulatedDelta < threshold * 1.5 && Math.abs(delta) < threshold * 2) return;
 
-    lastTriggerTime  = now;
+    lastTriggerTime = now;
     accumulatedDelta = 0;
 
     if (scrollingDown) {
@@ -128,13 +118,13 @@ export function createWheelHandler(el, callbacks, options = {}) {
     }
   }
 
-  // Non-passive so we can call preventDefault() to block CSS snap interference
-  el.addEventListener('wheel', onWheel, { passive: false });
+  // Passive — wrapper has no native scroll, so we never need preventDefault()
+  el.addEventListener('wheel', onWheel, { passive: true });
 
   return {
     destroy() {
-      el.removeEventListener('wheel', onWheel, { passive: false });
+      el.removeEventListener('wheel', onWheel, { passive: true });
       if (clearAccumTimer) clearTimeout(clearAccumTimer);
-    }
+    },
   };
 }
