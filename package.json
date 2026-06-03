@@ -1,5 +1,5 @@
 {
-  "name": "snapscroll",
+  "name": "@elementmints/snapscroll",
   "version": "2.1.1",
   "description": "Production-grade, accessibility-first fullpage scrolling engine. CSS Scroll Snap. Zero dependencies.",
   "license": "MIT",
