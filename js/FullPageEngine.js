@@ -9,21 +9,25 @@
  */
 
 import { DEFAULT_CONFIG, mergeConfig, parseDataConfig } from './core/config.js';
-import { createState }                                   from './core/state.js';
-import { createEventBus }                                from './core/events.js';
-import { CLASSES, ATTRS, EVENTS, DIRECTION }             from './core/constants.js';
-import { $$, addClass, removeClass, focusWithoutScroll } from './utils/dom.js';
-import { isAEMAuthorMode, prefersReducedMotion, debounce } from './utils/performance.js';
-import { setHash, getHash, parseAnchor, normalizeAnchor, buildAnchor } from './utils/url.js';
-import { createTouchHandler }                            from './modules/touch.js';
-import { createKeyboardHandler }                         from './modules/keyboard.js';
-import { createWheelHandler }                            from './modules/wheel.js';
-import { createNavigation, createProgressBar }           from './modules/navigation.js';
-import { initSectionSlides }                             from './modules/slides.js';
-import { createLazyLoader }                              from './modules/lazyload.js';
-import { createA11yModule, manageFocusOnSection }        from './accessibility/accessibility.js';
-import { createSectionObserver, createResizeObserver, createMutationObserver } from './observers/observers.js';
-import { createPluginSystem }                            from './modules/plugins.js';
+import { createState } from './core/state.js';
+import { createEventBus } from './core/events.js';
+import { CLASSES, ATTRS, EVENTS, DIRECTION } from './core/constants.js';
+import { $$, addClass, removeClass } from './utils/dom.js';
+import { isAEMAuthorMode, prefersReducedMotion } from './utils/performance.js';
+import { setHash, getHash, parseAnchor, normalizeAnchor } from './utils/url.js';
+import { createTouchHandler } from './modules/touch.js';
+import { createKeyboardHandler } from './modules/keyboard.js';
+import { createWheelHandler } from './modules/wheel.js';
+import { createNavigation, createProgressBar } from './modules/navigation.js';
+import { initSectionSlides } from './modules/slides.js';
+import { createLazyLoader } from './modules/lazyload.js';
+import { createA11yModule, manageFocusOnSection } from './accessibility/accessibility.js';
+import {
+  createSectionObserver,
+  createResizeObserver,
+  createMutationObserver,
+} from './observers/observers.js';
+import { createPluginSystem } from './modules/plugins.js';
 
 /**
  * @class FullPageEngine
@@ -35,9 +39,7 @@ export class FullPageEngine {
    */
   constructor(selector, userConfig = {}) {
     /** @type {HTMLElement} */
-    this._container = typeof selector === 'string'
-      ? document.querySelector(selector)
-      : selector;
+    this._container = typeof selector === 'string' ? document.querySelector(selector) : selector;
 
     if (!this._container) {
       console.error('[FullPageEngine] Container element not found:', selector);
@@ -48,28 +50,28 @@ export class FullPageEngine {
     const dataConfig = parseDataConfig(this._container);
     this._config = mergeConfig(mergeConfig(DEFAULT_CONFIG, dataConfig), userConfig);
 
-    this._state   = createState();
-    this._bus     = createEventBus(this._container);
+    this._state = createState();
+    this._bus = createEventBus(this._container);
     this._plugins = createPluginSystem();
 
     // Module handles (for cleanup)
-    this._touchHandler    = null;
+    this._touchHandler = null;
     this._keyboardHandler = null;
-    this._wheelHandler    = null;
-    this._navigation      = null;
-    this._progressBar     = null;
-    this._lazyLoader      = null;
-    this._a11y            = null;
+    this._wheelHandler = null;
+    this._navigation = null;
+    this._progressBar = null;
+    this._lazyLoader = null;
+    this._a11y = null;
     this._sectionObserver = null;
-    this._resizeObserver  = null;
-    this._mutationObserver= null;
-    this._slidesMap       = new Map(); // sectionIndex → slides module
-    this._cleanups        = [];       // array of cleanup functions
-    this._programmaticNav    = false; // true while a JS-driven scroll is in flight
-    this._navTarget          = -1;   // intended destination during programmatic nav
-    this._navGuardTimer      = null; // timer ID for the programmatic nav guard
-    this._pendingNav         = null; // queued nav request during active scroll
-    this._overflowLockUntil  = 0;   // timestamp until overflow inertia is blocked
+    this._resizeObserver = null;
+    this._mutationObserver = null;
+    this._slidesMap = new Map(); // sectionIndex → slides module
+    this._cleanups = []; // array of cleanup functions
+    this._programmaticNav = false; // true while a JS-driven scroll is in flight
+    this._navTarget = -1; // intended destination during programmatic nav
+    this._navGuardTimer = null; // timer ID for the programmatic nav guard
+    this._pendingNav = null; // queued nav request during active scroll
+    this._overflowLockUntil = 0; // timestamp until overflow inertia is blocked
 
     this._init();
   }
@@ -95,10 +97,10 @@ export class FullPageEngine {
 
     // Set up state
     this._state.set({
-      totalSections:  this._sections.length,
-      activeSlides:   new Array(this._sections.length).fill(0),
-      totalSlides:    this._sections.map(s => $$(`.${CLASSES.SLIDE}`, s).length || 1),
-      reducedMotion:  prefersReducedMotion(),
+      totalSections: this._sections.length,
+      activeSlides: new Array(this._sections.length).fill(0),
+      totalSlides: this._sections.map(s => $$(`.${CLASSES.SLIDE}`, s).length || 1),
+      reducedMotion: prefersReducedMotion(),
     });
 
     // Bootstrap modules
@@ -195,16 +197,16 @@ export class FullPageEngine {
       if (!slideEls.length) return;
 
       const slides = initSectionSlides(section, {
-        loop:             this._config.loopSlides,
-        autoplay:         this._config.autoplay,
+        loop: this._config.loopSlides,
+        autoplay: this._config.autoplay,
         autoplayInterval: this._config.autoplayInterval,
-        eventBus:         this._bus,
-        onSlideChange:    ({ prev, next }) => {
-          const slides = this._state.get('activeSlides');
-          slides[i] = next;
-          this._state.set('activeSlides', [...slides]);
+        eventBus: this._bus,
+        onSlideChange: ({ prev, next }) => {
+          const activeSlides = this._state.get('activeSlides');
+          activeSlides[i] = next;
+          this._state.set('activeSlides', [...activeSlides]);
           this._config.afterSlideLoad?.(section, next, prev);
-        }
+        },
       });
 
       if (slides) this._slidesMap.set(i, slides);
@@ -218,21 +220,21 @@ export class FullPageEngine {
 
     this._navigation = createNavigation({
       container: this._container,
-      count:     this._sections.length,
-      tooltips:  this._config.navigationTooltips,
-      position:  this._config.navigationPosition,
-      onDotClick:(index) => this.moveTo(index),
+      count: this._sections.length,
+      tooltips: this._config.navigationTooltips,
+      position: this._config.navigationPosition,
+      onDotClick: index => this.moveTo(index),
     });
 
     // Keep dots in sync with state
-    this._state.subscribe('activeSection', (newIdx) => {
+    this._state.subscribe('activeSection', newIdx => {
       this._navigation?.update(newIdx);
     });
 
     // Progress bar
     if (this._config.progressBar) {
       this._progressBar = createProgressBar(this._container);
-      this._state.subscribe('activeSection', (newIdx) => {
+      this._state.subscribe('activeSection', newIdx => {
         const total = this._state.get('totalSections');
         this._progressBar.update(newIdx / Math.max(1, total - 1));
       });
@@ -246,20 +248,26 @@ export class FullPageEngine {
       this._container,
       {
         onScrollDown: () => {
-          const si     = this._state.get('activeSection');
+          const si = this._state.get('activeSection');
           const slides = this._slidesMap.get(si);
           if (slides) {
             const isLast = slides.activeIndex >= this._state.get('totalSlides')[si] - 1;
-            if (!isLast) { slides.next(); return; }
+            if (!isLast) {
+              slides.next();
+              return;
+            }
           }
           this.moveDown();
         },
         onScrollUp: () => {
-          const si     = this._state.get('activeSection');
+          const si = this._state.get('activeSection');
           const slides = this._slidesMap.get(si);
           if (slides) {
             const isFirst = slides.activeIndex <= 0;
-            if (!isFirst) { slides.prev(); return; }
+            if (!isFirst) {
+              slides.prev();
+              return;
+            }
           }
           this.moveUp();
         },
@@ -281,24 +289,30 @@ export class FullPageEngine {
       this._container,
       {
         onSwipeUp: () => {
-          const si     = this._state.get('activeSection');
+          const si = this._state.get('activeSection');
           const slides = this._slidesMap.get(si);
           if (slides) {
             const isLast = slides.activeIndex >= this._state.get('totalSlides')[si] - 1;
-            if (!isLast) { slides.next(); return; }
+            if (!isLast) {
+              slides.next();
+              return;
+            }
           }
           this.moveDown();
         },
         onSwipeDown: () => {
-          const si     = this._state.get('activeSection');
+          const si = this._state.get('activeSection');
           const slides = this._slidesMap.get(si);
           if (slides) {
             const isFirst = slides.activeIndex <= 0;
-            if (!isFirst) { slides.prev(); return; }
+            if (!isFirst) {
+              slides.prev();
+              return;
+            }
           }
           this.moveUp();
         },
-        onSwipeLeft:  () => this._moveSlideRight(),
+        onSwipeLeft: () => this._moveSlideRight(),
         onSwipeRight: () => this._moveSlideLeft(),
       },
       { minDistance: this._config.touchSensitivity * 3 }
@@ -312,12 +326,12 @@ export class FullPageEngine {
     if (!this._config.keyboardScrolling) return;
 
     this._keyboardHandler = createKeyboardHandler({
-      moveUp:      () => this.moveUp(),
-      moveDown:    () => this.moveDown(),
-      moveLeft:    () => this._moveSlideLeft(),
-      moveRight:   () => this._moveSlideRight(),
+      moveUp: () => this.moveUp(),
+      moveDown: () => this.moveDown(),
+      moveLeft: () => this._moveSlideLeft(),
+      moveRight: () => this._moveSlideRight(),
       moveToFirst: () => this.moveTo(0),
-      moveToLast:  () => this.moveTo(this._sections.length - 1),
+      moveToLast: () => this.moveTo(this._sections.length - 1),
     });
     this._cleanups.push(() => this._keyboardHandler?.destroy());
   }
@@ -330,32 +344,25 @@ export class FullPageEngine {
     // (passed through during smooth scroll) don't flip the active state.
     // If the IO reports the exact nav target while _programmaticNav is still
     // true (rare timing), accept it as a no-op since state is already correct.
-    this._sectionObserver = createSectionObserver(
-      this._sections,
-      (activeIndex) => {
-        if (this._programmaticNav) return;
-        if (activeIndex !== this._state.get('activeSection')) {
-          this._activateSection(activeIndex);
-        }
+    this._sectionObserver = createSectionObserver(this._sections, activeIndex => {
+      if (this._programmaticNav) return;
+      if (activeIndex !== this._state.get('activeSection')) {
+        this._activateSection(activeIndex);
       }
-    );
+    });
 
     // Resize → responsive check
-    this._resizeObserver = createResizeObserver(
-      this._container,
-      ({ width, height }) => this._onResize(width, height)
+    this._resizeObserver = createResizeObserver(this._container, ({ width, height }) =>
+      this._onResize(width, height)
     );
 
     // AEM / SPA dynamic content
-    this._mutationObserver = createMutationObserver(
-      this._container,
-      () => this._onDOMChange()
-    );
+    this._mutationObserver = createMutationObserver(this._container, () => this._onDOMChange());
 
     this._cleanups.push(
       () => this._sectionObserver?.destroy(),
       () => this._resizeObserver?.destroy(),
-      () => this._mutationObserver?.destroy(),
+      () => this._mutationObserver?.destroy()
     );
   }
 
@@ -363,7 +370,7 @@ export class FullPageEngine {
 
   _setupHashNavigation() {
     const onHashChange = () => {
-      const hash  = getHash();
+      const hash = getHash();
       if (!hash) return;
       const { section: anchor } = parseAnchor(hash);
       const idx = this._findSectionByAnchor(anchor);
@@ -383,8 +390,8 @@ export class FullPageEngine {
    */
   moveDown() {
     const current = this._state.get('activeSection');
-    const total   = this._state.get('totalSections');
-    const next    = current + 1;
+    const total = this._state.get('totalSections');
+    const next = current + 1;
 
     if (next >= total) {
       if (this._config.loop) this.moveTo(0);
@@ -398,7 +405,7 @@ export class FullPageEngine {
    */
   moveUp() {
     const current = this._state.get('activeSection');
-    const prev    = current - 1;
+    const prev = current - 1;
 
     if (prev < 0) {
       if (this._config.loop) this.moveTo(this._sections.length - 1);
@@ -413,9 +420,7 @@ export class FullPageEngine {
    * @param {boolean} [animate=true]
    */
   moveTo(target, animate = true) {
-    const index = typeof target === 'string'
-      ? this._findSectionByAnchor(target)
-      : target;
+    const index = typeof target === 'string' ? this._findSectionByAnchor(target) : target;
 
     if (index < 0 || index >= this._sections.length) return;
     this._scrollToSection(index, animate);
@@ -442,26 +447,29 @@ export class FullPageEngine {
     }
     this._pendingNav = null;
 
-    if (index === this._state.get('activeSection') &&
-        this._sections[index].classList.contains(CLASSES.ACTIVE)) return;
+    if (
+      index === this._state.get('activeSection') &&
+      this._sections[index].classList.contains(CLASSES.ACTIVE)
+    )
+      return;
 
-    const prev    = this._state.get('activeSection');
+    const prev = this._state.get('activeSection');
     const section = this._sections[index];
 
     // Lifecycle: beforeLeave
     const continueNav = this._bus.emit(EVENTS.BEFORE_LEAVE, {
-      origin:      this._sections[prev],
+      origin: this._sections[prev],
       destination: section,
       originIndex: prev,
-      destIndex:   index,
+      destIndex: index,
     });
     if (!continueNav) return;
 
     this._config.beforeLeave?.(this._sections[prev], section, DIRECTION.DOWN);
     this._plugins.run('onLeave', {
       section: this._sections[prev],
-      origin:  prev,
-      dest:    index,
+      origin: prev,
+      dest: index,
     });
 
     // Cancel any previous scroll guard timer before starting a new one
@@ -490,8 +498,8 @@ export class FullPageEngine {
 
     // Lifecycle: onLeave → afterLoad
     this._bus.emit(EVENTS.ON_LEAVE, {
-      origin:  this._sections[prev],
-      dest:    section,
+      origin: this._sections[prev],
+      dest: section,
       destIdx: index,
     });
     this._config.onLeave?.(this._sections[prev], section, index);
@@ -503,7 +511,7 @@ export class FullPageEngine {
     // scrollTo on the container moves smoothly without snap interference.
     const scrollBehavior = animate && !this._state.get('reducedMotion') ? 'smooth' : 'instant';
     this._container.scrollTo({
-      top:      section.offsetTop,
+      top: section.offsetTop,
       behavior: scrollBehavior,
     });
 
@@ -511,35 +519,38 @@ export class FullPageEngine {
     // cannot misfire on intermediate sections passed through during smooth scroll.
     // Use scrollingSpeed * 1.5 as the guard window to cover CSS snap fights.
     const speed = animate && !this._state.get('reducedMotion') ? this._config.scrollingSpeed : 0;
-    this._navGuardTimer = setTimeout(() => {
-      this._navGuardTimer = null;
+    this._navGuardTimer = setTimeout(
+      () => {
+        this._navGuardTimer = null;
 
-      // Resync active section to the intended target — guards against any
-      // CSS snap or stale IO callback that may have flipped it during transit.
-      if (this._state.get('activeSection') !== index) {
-        this._activateSection(index);
-      }
+        // Resync active section to the intended target — guards against any
+        // CSS snap or stale IO callback that may have flipped it during transit.
+        if (this._state.get('activeSection') !== index) {
+          this._activateSection(index);
+        }
 
-      this._state.set('isScrolling', false);
-      this._programmaticNav = false;
-      this._navTarget       = -1;
+        this._state.set('isScrolling', false);
+        this._programmaticNav = false;
+        this._navTarget = -1;
 
-      this._bus.emit(EVENTS.AFTER_LOAD, {
-        section,
-        index,
-        anchor: section.getAttribute(ATTRS.ANCHOR),
-      });
-      this._config.afterLoad?.(section, index);
-      this._plugins.run('onLoad', { section, index });
-      manageFocusOnSection(section);
+        this._bus.emit(EVENTS.AFTER_LOAD, {
+          section,
+          index,
+          anchor: section.getAttribute(ATTRS.ANCHOR),
+        });
+        this._config.afterLoad?.(section, index);
+        this._plugins.run('onLoad', { section, index });
+        manageFocusOnSection(section);
 
-      // Execute any navigation request that arrived while we were scrolling
-      if (this._pendingNav) {
-        const { index: pi, animate: pa } = this._pendingNav;
-        this._pendingNav = null;
-        this._scrollToSection(pi, pa);
-      }
-    }, Math.max(speed * 1.5, speed + 200));
+        // Execute any navigation request that arrived while we were scrolling
+        if (this._pendingNav) {
+          const { index: pi, animate: pa } = this._pendingNav;
+          this._pendingNav = null;
+          this._scrollToSection(pi, pa);
+        }
+      },
+      Math.max(speed * 1.5, speed + 200)
+    );
   }
 
   _activateSection(index) {
@@ -574,8 +585,8 @@ export class FullPageEngine {
   _onResize(width, height) {
     const { responsiveWidth, responsiveHeight } = this._config;
     const wasResponsive = this._state.get('isResponsive');
-    const isResponsive  =
-      (responsiveWidth  > 0 && width  < responsiveWidth)  ||
+    const isResponsive =
+      (responsiveWidth > 0 && width < responsiveWidth) ||
       (responsiveHeight > 0 && height < responsiveHeight);
 
     if (isResponsive !== wasResponsive) {
@@ -603,9 +614,8 @@ export class FullPageEngine {
   _findSectionByAnchor(anchor) {
     if (!anchor) return -1;
     const norm = normalizeAnchor(anchor);
-    return this._sections.findIndex(s =>
-      normalizeAnchor(s.getAttribute(ATTRS.ANCHOR)) === norm ||
-      normalizeAnchor(s.id) === norm
+    return this._sections.findIndex(
+      s => normalizeAnchor(s.getAttribute(ATTRS.ANCHOR)) === norm || normalizeAnchor(s.id) === norm
     );
   }
 
@@ -625,7 +635,7 @@ export class FullPageEngine {
    * @returns {number}
    */
   getActiveSlide(sectionIndex) {
-    const si     = sectionIndex ?? this._state.get('activeSection');
+    const si = sectionIndex ?? this._state.get('activeSection');
     const slides = this._state.get('activeSlides');
     return slides[si] ?? 0;
   }
@@ -694,5 +704,3 @@ export class FullPageEngine {
     this._bus.emit?.(EVENTS.DESTROY, { instance: this });
   }
 }
-
-export default FullPageEngine;

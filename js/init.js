@@ -14,8 +14,8 @@
  * <div id="fp" data-fp-auto data-fp-config='{"loop":true}'>
  */
 
-import { FullPageEngine }    from './FullPageEngine.js';
-import { isAEMAuthorMode }   from './utils/performance.js';
+import { FullPageEngine } from './FullPageEngine.js';
+import { isAEMAuthorMode } from './utils/performance.js';
 import { createGSAPPlugin, createLenisPlugin } from './modules/plugins.js';
 
 export { FullPageEngine };
@@ -45,9 +45,7 @@ export function autoInit() {
  * @returns {FullPageEngine|undefined}
  */
 export function getInstance(elOrSelector) {
-  const el = typeof elOrSelector === 'string'
-    ? document.querySelector(elOrSelector)
-    : elOrSelector;
+  const el = typeof elOrSelector === 'string' ? document.querySelector(elOrSelector) : elOrSelector;
   return _instances.get(el);
 }
 
@@ -80,5 +78,3 @@ if (typeof window !== 'undefined' && window.Granite?.author) {
     autoInit();
   });
 }
-
-export default FullPageEngine;
