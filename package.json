@@ -1,6 +1,6 @@
 {
   "name": "snapscroll",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Production-grade, accessibility-first fullpage scrolling engine. CSS Scroll Snap. Zero dependencies.",
   "license": "MIT",
   "type": "module",

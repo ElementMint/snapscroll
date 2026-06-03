@@ -1,3 +1,10 @@
+## [1.0.5](https://github.com/ElementMint/snapscroll/compare/v1.0.4...v1.0.5) (2026-06-03)
+
+
+### Bug Fixes
+
+* remove unused imports and drop redundant default export ([45aa385](https://github.com/ElementMint/snapscroll/commit/45aa385a6c0bdff50378efb564bfd2410816e613))
+
 ## [1.0.4](https://github.com/ElementMint/snapscroll/compare/v1.0.3...v1.0.4) (2026-06-02)
 
 
