@@ -1,3 +1,32 @@
+# [2.0.0](https://github.com/ElementMint/snapscroll/compare/v1.0.5...v2.0.0) (2026-06-03)
+
+
+* feat!: replace CSS scroll-snap with JS rAF transform engine ([f77e406](https://github.com/ElementMint/snapscroll/commit/f77e406813a651195f57ea7f941a19aa87124f57))
+
+
+### BREAKING CHANGES
+
+* scroll mechanism is now transform:translateY on a .fp-rail
+element instead of CSS scroll-snap on the wrapper. This fixes all four
+reported stability issues:
+
+1. Safari blank screen — removed content-visibility:auto and CSS snap
+   which caused WebKit to skip painting sections during snap transitions
+2. Touch devices — passive wheel/touch listeners, no CSS snap to fight
+   iOS momentum scrolling; transform animation is fully JS-controlled
+3. Custom easing — easeInOutCubic via requestAnimationFrame loop,
+   not browser-controlled scrollTo smooth which has no easing API
+4. Smoothness — same architecture as fullpage.js: JS owns all position,
+   no native scroll interference
+
+Architecture changes:
+- .fp-wrapper: overflow:hidden, no scroll-snap, no overflow-y:scroll
+- .fp-rail: new div holding all sections, animated via translateY
+- _scrollToSection: rAF loop with easeInOutCubic replaces scrollTo
+- IntersectionObserver removed from active-section detection (JS owns it)
+- Wheel listener back to passive (no native scroll to preventDefault)
+- _onResize recalculates rail position instantly on viewport change
+
 ## [1.0.5](https://github.com/ElementMint/snapscroll/compare/v1.0.4...v1.0.5) (2026-06-03)
 
 
