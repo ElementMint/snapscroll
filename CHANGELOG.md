@@ -1,3 +1,10 @@
+## [2.1.2](https://github.com/ElementMint/snapscroll/compare/v2.1.1...v2.1.2) (2026-06-03)
+
+
+### Bug Fixes
+
+* block pull-to-refresh and overscroll on mobile ([faa41f3](https://github.com/ElementMint/snapscroll/commit/faa41f3ccb9ecacfaf181bc7ca90914331a9fee6))
+
 ## [2.1.1](https://github.com/ElementMint/snapscroll/compare/v2.1.0...v2.1.1) (2026-06-03)
 
 
