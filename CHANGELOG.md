@@ -1,3 +1,10 @@
+# [2.1.0](https://github.com/ElementMint/snapscroll/compare/v2.0.0...v2.1.0) (2026-06-03)
+
+
+### Features
+
+* continuous loop, rAF horizontal slides, configurable easing ([a133bc2](https://github.com/ElementMint/snapscroll/commit/a133bc2ac8b72237881e22bd6e7a9299eb81e79a))
+
 # [2.0.0](https://github.com/ElementMint/snapscroll/compare/v1.0.5...v2.0.0) (2026-06-03)
 
 
