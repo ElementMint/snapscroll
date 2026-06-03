@@ -428,10 +428,23 @@ export class FullPageEngine {
 
   // ─── Internal scroll logic ─────────────────────────────────────────────────
 
-  // Easing function: ease-in-out cubic — smooth acceleration and deceleration.
-  // t = normalized time 0..1, returns eased value 0..1.
-  _ease(t) {
-    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  // Built-in easing presets. t = normalized time 0..1, returns eased 0..1.
+  static _easings = {
+    easeInOutCubic: t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2),
+    easeInOutQuart: t => (t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2),
+    easeInOutSine: t => -(Math.cos(Math.PI * t) - 1) / 2,
+    easeOutCubic: t => 1 - Math.pow(1 - t, 3),
+    easeOutQuart: t => 1 - Math.pow(1 - t, 4),
+    easeOutExpo: t => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t)),
+    linear: t => t,
+  };
+
+  // Resolve config.easing to a callable function.
+  // Accepts: preset name string, or raw function.
+  _buildEaseFn() {
+    const e = this._config.easing;
+    if (typeof e === 'function') return e;
+    return FullPageEngine._easings[e] ?? FullPageEngine._easings['easeInOutCubic'];
   }
 
   _scrollToSection(index, animate = true) {
@@ -489,15 +502,34 @@ export class FullPageEngine {
 
     const shouldAnimate = animate && !this._state.get('reducedMotion');
     const duration = shouldAnimate ? this._config.scrollingSpeed : 0;
-    // Rail moves so index-th section sits at top of wrapper.
-    // translateY target = -(index * 100svh) — use px via offsetTop for accuracy.
+    const easeFn = this._buildEaseFn();
+    const h = this._container.clientHeight;
+    const total = this._sections.length;
+
+    // Determine from/to positions, handling continuous loop wrap.
+    // For loop: instead of jumping from last to first (visual rewind),
+    // animate one section further in the same direction, then snap back.
+    const normalToY = -(index * h);
     const fromY = this._currentY ?? 0;
-    const toY = -(index * this._container.clientHeight);
+    let toY = normalToY;
+
+    const isLooping = this._config.loop;
+    const goingDown = index === 0 && prev === total - 1; // last → first
+    const goingUp = index === total - 1 && prev === 0; // first → last
+
+    if (isLooping && goingDown && shouldAnimate) {
+      // Animate one more section down past the last, then snap to 0
+      toY = -(total * h);
+    } else if (isLooping && goingUp && shouldAnimate) {
+      // Animate one section up past the first, then snap to last
+      toY = h;
+    }
 
     const onDone = () => {
       this._rafId = null;
-      this._currentY = toY;
-      this._rail.style.transform = `translateY(${toY}px)`;
+      // For loop wraps: snap rail to the real position (invisible because same content)
+      this._currentY = normalToY;
+      this._rail.style.transform = `translateY(${normalToY}px)`;
       this._state.set('isScrolling', false);
 
       this._bus.emit(EVENTS.AFTER_LOAD, {
@@ -526,8 +558,7 @@ export class FullPageEngine {
     const tick = now => {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      const eased = this._ease(progress);
-      const y = fromY + (toY - fromY) * eased;
+      const y = fromY + (toY - fromY) * easeFn(progress);
 
       this._rail.style.transform = `translateY(${y}px)`;
 

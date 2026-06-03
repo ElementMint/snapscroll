@@ -3,43 +3,32 @@
 
 @use '../base/variables' as *;
 
-// ─── Slide container ─────────────────────────────────────────────────────────
+// ─── Slide container — clips the horizontal view ─────────────────────────────
 .fp-slides {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden; // no native scroll — JS rAF drives the rail
+  contain: layout paint;
+}
+
+// ─── Slide rail — JS animates transform: translateX() on this ────────────────
+.fp-slide-rail {
   display: flex;
   width: 100%;
   height: 100%;
-  // CSS horizontal scroll snap
-  scroll-snap-type: x mandatory;
-  overflow-x: scroll;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
-
-  contain: layout paint;
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 // ─── Individual slide ─────────────────────────────────────────────────────────
 .fp-slide {
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
   flex-shrink: 0;
   width: 100%;
   height: 100%;
   position: relative;
   overflow: hidden;
-  contain: layout paint;
-
-  // Content visibility for off-screen slides
-  content-visibility: auto;
-  contain-intrinsic-size: auto 100svh;
-
-  &.fp-active {
-    content-visibility: visible;
-  }
 }
 
 // ─── Slide arrows ────────────────────────────────────────────────────────────
@@ -48,7 +37,7 @@
   top: 50%;
   transform: translateY(-50%);
   z-index: 10;
-  background: rgba(0,0,0,0.3);
+  background: rgba(0, 0, 0, 0.3);
   color: $fp-arrow-color;
   border: none;
   width: 44px;
@@ -61,19 +50,19 @@
   justify-content: center;
   transition:
     background-color 200ms ease,
-    color            200ms ease,
-    transform        200ms ease;
+    color 200ms ease,
+    transform 200ms ease;
   // Avoid layout shift
   will-change: transform;
 
   &:focus-visible {
-    outline: 2px solid rgba(255,255,255,0.8);
+    outline: 2px solid rgba(255, 255, 255, 0.8);
     outline-offset: 2px;
   }
 
   @media (hover: hover) {
     &:hover {
-      background: rgba(0,0,0,0.6);
+      background: rgba(0, 0, 0, 0.6);
       color: $fp-arrow-hover-color;
     }
   }
@@ -91,8 +80,12 @@
     height: 36px;
     font-size: 16px;
 
-    &--prev { left: 8px; }
-    &--next { right: 8px; }
+    &--prev {
+      left: 8px;
+    }
+    &--next {
+      right: 8px;
+    }
   }
 }
 
@@ -110,14 +103,14 @@
     width: 8px;
     height: 8px;
     padding: 0;
-    background: rgba(255,255,255,0.4);
-    border: 1.5px solid rgba(255,255,255,0.7);
+    background: rgba(255, 255, 255, 0.4);
+    border: 1.5px solid rgba(255, 255, 255, 0.7);
     border-radius: 50%;
     cursor: pointer;
     position: relative;
     transition:
       background-color 250ms ease,
-      transform        250ms ease;
+      transform 250ms ease;
 
     // Hit target
     &::before {
@@ -128,13 +121,13 @@
     }
 
     &:focus-visible {
-      outline: 2px solid rgba(255,255,255,0.8);
+      outline: 2px solid rgba(255, 255, 255, 0.8);
       outline-offset: 2px;
     }
 
     &--active,
-    &[aria-current="true"] {
-      background: rgba(255,255,255,1);
+    &[aria-current='true'] {
+      background: rgba(255, 255, 255, 1);
       transform: scale(1.25);
     }
   }

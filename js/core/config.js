@@ -16,7 +16,9 @@
  * @property {boolean}  [autoScrolling=true]     - Use CSS scroll snap
  * @property {boolean}  [fitToSection=true]      - Sections fill viewport
  * @property {boolean}  [scrollBar=false]        - Show native scrollbar
- * @property {boolean}  [easing='ease']          - Transition easing
+ * @property {string|Function} [easing='easeInOutCubic'] - Easing preset name or custom fn(t)=>t.
+ *   Built-in presets: 'easeInOutCubic' | 'easeInOutQuart' | 'easeInOutSine' |
+ *   'easeOutCubic' | 'easeOutQuart' | 'easeOutExpo' | 'linear'
  * @property {number}   [scrollingSpeed=700]     - Transition duration ms
  * @property {boolean}  [touchSensitivity=15]    - Touch sensitivity (px)
  * @property {boolean}  [normalScrollElements=null] - Selectors that allow natural scroll
@@ -38,42 +40,42 @@
  */
 
 export const DEFAULT_CONFIG = {
-  anchors:               [],
-  navigation:            true,
-  navigationPosition:    'right',
-  navigationTooltips:    [],
-  showActiveTooltip:     false,
-  slidesNavigation:      true,
-  loop:                  false,
-  loopSlides:            false,
-  autoScrolling:         true,
-  fitToSection:          true,
-  scrollBar:             false,
-  easing:                'cubic-bezier(0.645, 0.045, 0.355, 1.000)',
-  scrollingSpeed:        700,
-  touchSensitivity:      15,
-  normalScrollElements:  null,
-  keyboardScrolling:     true,
-  animateAnchor:         true,
-  recordHistory:         true,
-  lazyLoading:           true,
-  responsiveWidth:       0,
-  responsiveHeight:      0,
-  progressBar:           false,
-  autoplay:              false,
-  autoplayInterval:      5000,
+  anchors: [],
+  navigation: true,
+  navigationPosition: 'right',
+  navigationTooltips: [],
+  showActiveTooltip: false,
+  slidesNavigation: true,
+  loop: false,
+  loopSlides: false,
+  autoScrolling: true,
+  fitToSection: true,
+  scrollBar: false,
+  easing: 'easeInOutCubic',
+  scrollingSpeed: 700,
+  touchSensitivity: 15,
+  normalScrollElements: null,
+  keyboardScrolling: true,
+  animateAnchor: true,
+  recordHistory: true,
+  lazyLoading: true,
+  responsiveWidth: 0,
+  responsiveHeight: 0,
+  progressBar: false,
+  autoplay: false,
+  autoplayInterval: 5000,
   // GSAP integration hooks
-  gsap:                  null,
+  gsap: null,
   // Plugin system
-  plugins:               [],
+  plugins: [],
   // Callbacks
-  onInit:                null,
-  beforeLeave:           null,
-  onLeave:               null,
-  afterLoad:             null,
-  onSlideLeave:          null,
-  afterSlideLoad:        null,
-  onResize:              null,
+  onInit: null,
+  beforeLeave: null,
+  onLeave: null,
+  afterLoad: null,
+  onSlideLeave: null,
+  afterSlideLoad: null,
+  onResize: null,
 };
 
 /**

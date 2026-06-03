@@ -1,13 +1,19 @@
 /**
  * @file slides.js
  * @description Horizontal slides module.
- * Uses CSS scroll-snap on a per-section horizontal scroll container.
- * Each section with [data-fp-slide] children gets a slide container.
+ * Uses JS rAF transform animation (same as vertical rail) — no CSS scroll-snap
+ * on the slide container, which avoids the snap-vs-scrollTo conflict that
+ * caused slides to get stuck on trackpad/touch swipes.
  */
 
 import { CLASSES, EVENTS } from '../core/constants.js';
 import { $$, createElement } from '../utils/dom.js';
 import { PASSIVE_OPTS } from '../utils/performance.js';
+
+// easeInOutCubic — matches the default vertical easing
+function easeInOutCubic(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
 
 /**
  * Initialize horizontal slides for a section
@@ -34,14 +40,23 @@ export function initSectionSlides(section, options = {}) {
 
   let activeIndex = 0;
   let autoplayTimer = null;
+  let rafId = null;
+  let currentX = 0; // current translateX in px
 
   // Create slide wrapper if not already structured
   let slideContainer = section.querySelector(`.${CLASSES.SLIDE_CONTAINER}`);
   if (!slideContainer) {
     slideContainer = createElement('div', { class: CLASSES.SLIDE_CONTAINER });
-    // Move slides into container
     slides.forEach(slide => slideContainer.appendChild(slide));
     section.appendChild(slideContainer);
+  }
+
+  // Inner rail — slides stack horizontally inside it, JS animates translateX
+  let slideRail = slideContainer.querySelector('.fp-slide-rail');
+  if (!slideRail) {
+    slideRail = createElement('div', { class: 'fp-slide-rail' });
+    slides.forEach(slide => slideRail.appendChild(slide));
+    slideContainer.appendChild(slideRail);
   }
 
   // Slide controls (arrows)
@@ -113,12 +128,25 @@ export function initSectionSlides(section, options = {}) {
       dot.setAttribute('aria-current', String(isActive));
     });
 
-    // Scroll snap: use scrollLeft on the container
-    const slideWidth = slideContainer.offsetWidth;
-    slideContainer.scrollTo({
-      left: slideWidth * next,
-      behavior: 'smooth',
-    });
+    // Animate slide rail via rAF translateX — no CSS scroll-snap fighting JS
+    if (rafId) cancelAnimationFrame(rafId);
+    const fromX = currentX;
+    const toX = -(next * slideContainer.offsetWidth);
+    const start = performance.now();
+    const dur = 500; // ms — slide transition speed
+
+    const tick = now => {
+      const progress = Math.min((now - start) / dur, 1);
+      const x = fromX + (toX - fromX) * easeInOutCubic(progress);
+      slideRail.style.transform = `translateX(${x}px)`;
+      if (progress < 1) {
+        rafId = requestAnimationFrame(tick);
+      } else {
+        rafId = null;
+        currentX = toX;
+      }
+    };
+    rafId = requestAnimationFrame(tick);
 
     onSlideChange?.({ prev, next, section });
     eventBus?.emit(EVENTS.SLIDE_LOAD, { slideIndex: next, prevIndex: prev, section });
@@ -141,18 +169,6 @@ export function initSectionSlides(section, options = {}) {
   prevBtn.addEventListener('click', onPrevClick);
   nextBtn.addEventListener('click', onNextClick);
   dotsContainer.addEventListener('click', onDotClick);
-
-  // Handle native scroll snap changes
-  let scrollTimer = null;
-  function onSlideScroll() {
-    if (scrollTimer) clearTimeout(scrollTimer);
-    scrollTimer = setTimeout(() => {
-      const slideWidth = slideContainer.offsetWidth;
-      const snappedIndex = Math.round(slideContainer.scrollLeft / slideWidth);
-      if (snappedIndex !== activeIndex) setActiveSlide(snappedIndex, 'scroll');
-    }, 100);
-  }
-  slideContainer.addEventListener('scroll', onSlideScroll, PASSIVE_OPTS);
 
   // Autoplay
   function startAutoplay() {
@@ -197,16 +213,15 @@ export function initSectionSlides(section, options = {}) {
     },
     destroy() {
       stopAutoplay();
+      if (rafId) cancelAnimationFrame(rafId);
       prevBtn.removeEventListener('click', onPrevClick);
       nextBtn.removeEventListener('click', onNextClick);
       dotsContainer.removeEventListener('click', onDotClick);
-      slideContainer.removeEventListener('scroll', onSlideScroll, PASSIVE_OPTS);
       slideContainer.removeEventListener('pointerenter', stopAutoplay, PASSIVE_OPTS);
       slideContainer.removeEventListener('pointerleave', startAutoplay, PASSIVE_OPTS);
       prevBtn.remove();
       nextBtn.remove();
       dotsContainer.remove();
-      if (scrollTimer) clearTimeout(scrollTimer);
     },
   };
 }
