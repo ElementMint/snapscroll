@@ -159,14 +159,36 @@ export class FullPageEngine {
         section.setAttribute('tabindex', '0');
       }
 
-      // Move section into the rail
       this._rail.appendChild(section);
 
       if (i === 0) addClass(section, CLASSES.ACTIVE);
     });
 
-    // Rail height = total sections stacked
-    this._rail.style.height = `${this._sections.length * 100}svh`;
+    // When loop is enabled, clone the first and last sections as bookends.
+    // Rail layout: [clone-last | sec0 | sec1 | … | secN | clone-first]
+    // The rail starts at translateY(-h) so sec0 is visible.
+    // Loop wrap: animate into the clone, snap back to the real section — no blank.
+    if (this._config.loop && this._sections.length > 1) {
+      const cloneFirst = this._sections[0].cloneNode(true);
+      const cloneLast = this._sections[this._sections.length - 1].cloneNode(true);
+      cloneFirst.setAttribute('aria-hidden', 'true');
+      cloneLast.setAttribute('aria-hidden', 'true');
+      cloneFirst.removeAttribute('id');
+      cloneLast.removeAttribute('id');
+      this._rail.appendChild(cloneFirst); // after last real section
+      this._rail.insertBefore(cloneLast, this._rail.firstChild); // before first
+      this._loopOffset = 1; // real sections start at rail index 1
+    } else {
+      this._loopOffset = 0;
+    }
+
+    const railSections = this._loopOffset ? this._sections.length + 2 : this._sections.length;
+    this._rail.style.height = `${railSections * 100}svh`;
+
+    // Start at the first real section (skip prepended clone if looping)
+    const startY = -(this._loopOffset * this._container.clientHeight);
+    this._currentY = startY;
+    this._rail.style.transform = `translateY(${startY}px)`;
 
     this._state.set('activeSection', 0);
   }
@@ -505,31 +527,34 @@ export class FullPageEngine {
     const easeFn = this._buildEaseFn();
     const h = this._container.clientHeight;
     const total = this._sections.length;
+    const off = this._loopOffset ?? 0;
 
-    // Determine from/to positions, handling continuous loop wrap.
-    // For loop: instead of jumping from last to first (visual rewind),
-    // animate one section further in the same direction, then snap back.
-    const normalToY = -(index * h);
-    const fromY = this._currentY ?? 0;
-    let toY = normalToY;
+    // Real section positions account for the clone prepended at index 0 of the rail.
+    // section[i] sits at rail row (off + i), so translateY = -((off + i) * h).
+    const realY = -((off + index) * h);
+    const fromY = this._currentY ?? -off * h;
+    let toY = realY;
 
-    const isLooping = this._config.loop;
-    const goingDown = index === 0 && prev === total - 1; // last → first
-    const goingUp = index === total - 1 && prev === 0; // first → last
+    // Loop wrap: animate into the adjacent clone (which looks identical to the
+    // real destination), then snap the rail to the real section position.
+    // No blank frames because the clone fills the space the animation travels through.
+    const isLooping = this._config.loop && off > 0;
+    const goingDown = index === 0 && prev === total - 1; // last → clone-first
+    const goingUp = index === total - 1 && prev === 0; // first → clone-last
 
     if (isLooping && goingDown && shouldAnimate) {
-      // Animate one more section down past the last, then snap to 0
-      toY = -(total * h);
+      // Clone of first is appended after last real section
+      toY = -((off + total) * h);
     } else if (isLooping && goingUp && shouldAnimate) {
-      // Animate one section up past the first, then snap to last
-      toY = h;
+      // Clone of last is prepended before first real section (rail index 0)
+      toY = 0;
     }
 
     const onDone = () => {
       this._rafId = null;
-      // For loop wraps: snap rail to the real position (invisible because same content)
-      this._currentY = normalToY;
-      this._rail.style.transform = `translateY(${normalToY}px)`;
+      // Snap to real section — invisible because clone looks identical
+      this._currentY = realY;
+      this._rail.style.transform = `translateY(${realY}px)`;
       this._state.set('isScrolling', false);
 
       this._bus.emit(EVENTS.AFTER_LOAD, {
@@ -616,7 +641,8 @@ export class FullPageEngine {
     // Recalculate rail position — section heights are viewport-relative (100svh),
     // so after a resize the active section must be repositioned instantly.
     const idx = this._state.get('activeSection');
-    this._currentY = -(idx * this._container.clientHeight);
+    const off = this._loopOffset ?? 0;
+    this._currentY = -((off + idx) * this._container.clientHeight);
     if (this._rail) this._rail.style.transform = `translateY(${this._currentY}px)`;
 
     this._bus.emit(EVENTS.RESIZE, { width, height, isResponsive });

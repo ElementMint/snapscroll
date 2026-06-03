@@ -29,6 +29,11 @@
 
   // Promote to its own compositor layer — the rail slides under it
   will-change: transform;
+
+  // Inherit html/body background so any gap during loop snap shows
+  // the page background rather than white. Set html { background: <color> }
+  // to match your first/last section and prevent flash.
+  background: inherit;
 }
 
 // ─── Rail (JS-animated) ──────────────────────────────────────────────────────
