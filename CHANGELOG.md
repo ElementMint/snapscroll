@@ -1,3 +1,10 @@
+## [2.1.1](https://github.com/ElementMint/snapscroll/compare/v2.1.0...v2.1.1) (2026-06-03)
+
+
+### Bug Fixes
+
+* clone-based loop — no blank screen between sections ([5fd4e72](https://github.com/ElementMint/snapscroll/commit/5fd4e72ff5c897f559a2d320650ef078a6c9444b))
+
 # [2.1.0](https://github.com/ElementMint/snapscroll/compare/v2.0.0...v2.1.0) (2026-06-03)
 
 
